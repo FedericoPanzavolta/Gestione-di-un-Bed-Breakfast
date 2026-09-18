@@ -26,8 +26,8 @@ class Camera(models.Model):
 
 class Include(models.Model):
     pk = models.CompositePrimaryKey('codiceprenotazione', 'nomeservizio')
-    nomeservizio = models.ForeignKey('ServizioAggiuntivo', models.DO_NOTHING, db_column='nomeServizio')  # Field name made lowercase.
-    codiceprenotazione = models.ForeignKey('Prenotazione', models.DO_NOTHING, db_column='codicePrenotazione')  # Field name made lowercase.
+    nomeservizio = models.ForeignKey('ServizioAggiuntivo', models.PROTECT, db_column='nomeServizio')  # Field name made lowercase.
+    codiceprenotazione = models.ForeignKey('Prenotazione', models.CASCADE, db_column='codicePrenotazione')  # Field name made lowercase.
 
     class Meta:
         db_table = 'INCLUDE'
@@ -36,7 +36,7 @@ class Include(models.Model):
 
 class Occupante(models.Model):
     pk = models.CompositePrimaryKey('codiceprenotazione', 'documentoidentita')
-    codiceprenotazione = models.ForeignKey('Prenotazione', models.DO_NOTHING, db_column='codicePrenotazione')  # Field name made lowercase.
+    codiceprenotazione = models.ForeignKey('Prenotazione', models.CASCADE, db_column='codicePrenotazione')  # Field name made lowercase.
     nome = models.CharField(max_length=25)
     cognome = models.CharField(max_length=25)
     documentoidentita = models.CharField(db_column='documentoIdentita', max_length=9)  # Field name made lowercase.
@@ -59,8 +59,9 @@ class Ospite(models.Model):
 
 
 class Pagamento(models.Model):
-    codicepagamento = models.DecimalField(db_column='codicePagamento', primary_key=True, max_digits=6, decimal_places=0)  # Field name made lowercase.
-    codiceprenotazione = models.OneToOneField('Prenotazione', models.DO_NOTHING, db_column='codicePrenotazione')  # Field name made lowercase.
+    # codicepagamento = models.DecimalField(db_column='codicePagamento', primary_key=True, max_digits=6, decimal_places=0)  # Field name made lowercase.
+    codicepagamento = models.AutoField(db_column='codicePagamento', primary_key=True)
+    codiceprenotazione = models.OneToOneField('Prenotazione', models.CASCADE, db_column='codicePrenotazione')  # Field name made lowercase.
     importototale = models.DecimalField(db_column='importoTotale', max_digits=8, decimal_places=2)  # Field name made lowercase.
     metodo = models.CharField(max_length=20)
     data = models.DateField()
@@ -84,13 +85,14 @@ class Personale(models.Model):
 
 
 class Prenotazione(models.Model):
-    codiceprenotazione = models.DecimalField(db_column='codicePrenotazione', primary_key=True, max_digits=6, decimal_places=0)  # Field name made lowercase.
+    # codiceprenotazione = models.DecimalField(db_column='codicePrenotazione', primary_key=True, max_digits=6, decimal_places=0)  # Field name made lowercase.
+    codiceprenotazione = models.AutoField(db_column='codicePrenotazione', primary_key=True)
     dataarrivo = models.DateField(db_column='dataArrivo')  # Field name made lowercase.
     datapartenza = models.DateField(db_column='dataPartenza')  # Field name made lowercase.
     numeroospiti = models.DecimalField(db_column='numeroOspiti', max_digits=2, decimal_places=0)  # Field name made lowercase.
     stato = models.CharField(max_length=12)
     datacheckineffettivo = models.DateField(db_column='dataCheckInEffettivo', blank=True, null=True)  # Field name made lowercase.
-    documentoidentitaospite = models.ForeignKey(Ospite, models.DO_NOTHING, db_column='documentoIdentitaOspite')  # Field name made lowercase.
+    documentoidentitaospite = models.ForeignKey(Ospite, models.PROTECT, db_column='documentoIdentitaOspite')  # Field name made lowercase.
     piano = models.DecimalField(max_digits=2, decimal_places=0)
     numerocamera = models.DecimalField(db_column='numeroCamera', max_digits=3, decimal_places=0) # Field name made lowercase.
     camera = models.ForeignObject(
@@ -99,7 +101,7 @@ class Prenotazione(models.Model):
         from_fields=('piano', 'numerocamera'),
         to_fields=('piano', 'numerocamera'),
     )
-    datainiziostagione = models.ForeignKey('Stagione', models.DO_NOTHING, db_column='dataInizioStagione', blank=True, null=True)  # Field name made lowercase.
+    datainiziostagione = models.ForeignKey('Stagione', models.PROTECT, db_column='dataInizioStagione', blank=True, null=True)  # Field name made lowercase.
 
     class Meta:
         db_table = 'PRENOTAZIONE'
@@ -116,7 +118,7 @@ class Pulizia(models.Model):
         to_fields=('piano', 'numerocamera'),
     )
     data = models.DateField()
-    documentoidentitaaddetto = models.ForeignKey(Personale, models.DO_NOTHING, db_column='documentoIdentitaAddetto')  # Field name made lowercase.
+    documentoidentitaaddetto = models.ForeignKey(Personale, models.PROTECT, db_column='documentoIdentitaAddetto')  # Field name made lowercase.
 
     class Meta:
         db_table = 'PULIZIA'
@@ -124,8 +126,9 @@ class Pulizia(models.Model):
 
 
 class Recensione(models.Model):
-    codicerecensione = models.DecimalField(db_column='codiceRecensione', primary_key=True, max_digits=6, decimal_places=0)  # Field name made lowercase.
-    codiceprenotazione = models.OneToOneField(Prenotazione, models.DO_NOTHING, db_column='codicePrenotazione')  # Field name made lowercase.
+    # codicerecensione = models.DecimalField(db_column='codiceRecensione', primary_key=True, max_digits=6, decimal_places=0)  # Field name made lowercase.
+    codicerecensione = models.AutoField(db_column='codiceRecensione', primary_key=True)
+    codiceprenotazione = models.OneToOneField(Prenotazione, models.CASCADE, db_column='codicePrenotazione')  # Field name made lowercase.
     voto = models.DecimalField(max_digits=2, decimal_places=0)
     commento = models.CharField(max_length=300, blank=True, null=True)
     data = models.DateField()
