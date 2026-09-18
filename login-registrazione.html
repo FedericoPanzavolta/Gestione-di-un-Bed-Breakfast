@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <main>
+        <form>
+            <!-- fieldset per registrazione ospite -->
+            <fieldset><legend>Registra i tuoi dati:</legend>
+                <label>Nome:</br><input type="text" placeholder="Nome..." required/></label></br>
+                <label>Cognome:</br><input type="text" placeholder="Cognome..." required/></label></br>
+                <label>Numero di telefono:</br><input type="tel" placeholder="Numero di telefono..." required></label></br>
+                <label>E-mail:</br><input type="email" placeholder="E-mail" required></label></br>
+                <label>Documento d'Identità:</br><input type="text" placeholder="Numero Documento" required></label></br>
+                <label>Password:</br><input type="password" name="pwd" id="pwd"></label></br>
+                <input type="submit" value="Invia" />
+                <input type="reset" value="Cancella" />
+            </fieldset>
+
+            <!-- fieldset per accesso ospite -->
+            <fieldset><legend>Inserisci i tuoi dati:</legend>  
+                <label>E-mail:</br><input type="email" placeholder="E-mail" required></label></br>
+                <label>Password:</br><input type="password" name="pwd" id="pwd"></label></br>
+                <label>Prima volta? <a href="#">Registrati</a></label></br>
+                <input type="submit" value="Invia" />
+                <input type="reset" value="Cancella" />
+            </fieldset>
+
+            <!-- fieldset per registrazione dipendente -->
+            <fieldset><legend>Registra i dati del dipendente:</legend>
+                <label>Nome:</br><input type="text" placeholder="Nome..." required/></label></br>
+                <label>Cognome:</br><input type="text" placeholder="Cognome..." required/></label></br>
+                <label>Numero di telefono:</br><input type="tel" placeholder="Numero di telefono..." required></label></br>
+                <label>E-mail:</br><input type="email" placeholder="E-mail" required></label></br>
+                <label>Documento d'Identità:</br><input type="text" placeholder="Numero Documento" required></label></br>
+                <label>Password:</br><input type="password" name="pwd" id="pwd"></label></br>
+                <label>Ruolo</br><select name="ruolo">
+                    <option value="receptionist">Receptionist</option>
+                    <option value="pulizie">Addetto alle Pulizie</option>
+                    <option value="admin">Amministratore</option>
+                </select></label></br>
+                <input type="submit" value="Invia" />
+                <input type="reset" value="Cancella" />
+            </fieldset>
+
+            <!-- fieldset per modifica dipendente -->
+            <fieldset><legend>Modifica i dati del dipendente:</legend>
+                <label>Nome:</br><input type="text" placeholder="Nome..." required/></label></br>
+                <label>Cognome:</br><input type="text" placeholder="Cognome..." required/></label></br>
+                <label>Numero di telefono:</br><input type="tel" placeholder="Numero di telefono..." required></label></br>
+                <label>E-mail:</br><input type="email" placeholder="E-mail" required></label></br>
+                <label>Documento d'Identità:</br><input type="text" placeholder="Numero Documento" required></label></br>
+                <label>Password:</br><input type="password" name="pwd" id="pwd"></label></br>
+                <label>Ruolo</br><select name="ruolo">
+                    <option value="receptionist">Receptionist</option>
+                    <option value="pulizie">Addetto alle Pulizie</option>
+                    <option value="admin">Amministratore</option>
+                </select></label></br>
+                <label>Attivo:</br><select name="attivo">
+                    <option value="true">Vero</option>
+                    <option value="false">Falso</option>
+                </select></label></br>
+                <input type="submit" value="Invia" />
+                <input type="reset" value="Cancella" />
+            </fieldset>
+
+            <!-- fieldset per accesso dipendente -->
+            <fieldset><legend>Inserisci i tuoi dati:</legend>  
+                <label>E-mail:</br><input type="email" placeholder="E-mail" required></label></br>
+                <label>Password:</br><input type="password" name="pwd" id="pwd"></label></br>
+                <input type="submit" value="Invia" />
+                <input type="reset" value="Cancella" />
+            </fieldset>
+        </form>
+    </main>
+</body>
+</html>

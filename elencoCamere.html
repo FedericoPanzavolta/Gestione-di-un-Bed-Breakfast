@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <main>
+        <!-- elenco camere visualizzato da ospite al momento della prenotazione -->
+        <fieldset><legend>Filtra la ricerca: </legend>
+            <label>Tipologia camera</br><select name="tipologia">
+                    <option value="singola">Singola</option>
+                    <option value="doppia">Doppia</option>
+                    <option value="matrimoniale">Matrimoniale</option>
+                    <option value="suite">Suite</option>
+                </select></label></br>
+            <label>Data di inizio soggiorno</br><input type="date" name="datainizio" id="datainizio"></label></br>
+            <label>Data di fine soggiorno</br><input type="date" name="datafine" id="datafine"></label></br>
+            <input type="submit" value="Cerca" />
+            <input type="reset" value="Cancella" />
+         </fieldset>
+
+        <section style="border: 2px solid black">
+            <h2>Singola</h2>
+            <p>1 Ospite</p> <!-- il numero degli ospito deve essere dinamico -->
+            <a href="#">Visualizza dettagli Camera</a>
+        </section>
+        <section style="border: 2px solid black">
+            <h2>Doppia</h2>
+            <p>2 Ospite</p> <!-- il numero degli ospito deve essere dinamico -->
+            <a href="#">Visualizza dettagli Camera</a>
+        </section>
+        <section style="border: 2px solid black">
+            <h2>Matrimoniale</h2>
+            <p>4 Ospite</p> <!-- il numero degli ospito deve essere dinamico -->
+            <a href="#">Visualizza dettagli Camera</a>
+        </section>
+        <section style="border: 2px solid black">
+            <h2>Suite</h2>
+            <p>8 Ospite</p> <!-- il numero degli ospito deve essere dinamico -->
+            <a href="#">Visualizza dettagli Camera</a>
+        </section>
+
+        <!-- elenco camere da pulire visualizzato da receptionist -->
+         <section style="border: 2px solid black">
+            <h2>101</h2> <!-- il numero della camera deve essere dinamico -->
+            <p>Piano 1</p> <!-- il numero del piano deve essere dinamico -->
+        </section>
+        <section style="border: 2px solid black">
+            <h2>203</h2> <!-- il numero della camera deve essere dinamico -->
+            <p>Piano 2</p> <!-- il numero del piano deve essere dinamico -->
+        </section>
+        <section style="border: 2px solid black">
+            <h2>302</h2> <!-- il numero della camera deve essere dinamico -->
+            <p>Piano 3</p> <!-- il numero del piano deve essere dinamico -->
+        </section>
+        <section style="border: 2px solid black">
+            <h2>303</h2> <!-- il numero della camera deve essere dinamico -->
+            <p>Piano 3</p> <!-- il numero del piano deve essere dinamico -->
+        </section>
+        
+        <!-- elenco camere da pulire visualizzato dall'addetto alle pulizie -->
+         <section style="border: 2px solid black">
+            <h2>101</h2> <!-- il numero della camera deve essere dinamico -->
+            <p>Piano 1</p> <!-- il numero del piano deve essere dinamico -->
+            <label>Contrassegna la camera come pulita: <button type="button">Pulita</button></label></br>
+        </section>
+        <section style="border: 2px solid black">
+            <h2>203</h2> <!-- il numero della camera deve essere dinamico -->
+            <p>Piano 2</p> <!-- il numero del piano deve essere dinamico -->
+            <label>Contrassegna la camera come pulita: <button type="button">Pulita</button></label></br>
+        </section>
+        <section style="border: 2px solid black">
+            <h2>302</h2> <!-- il numero della camera deve essere dinamico -->
+            <p>Piano 3</p> <!-- il numero del piano deve essere dinamico -->
+            <label>Contrassegna la camera come pulita: <button type="button">Pulita</button></label></br>
+        </section>
+        <section style="border: 2px solid black">
+            <h2>303</h2> <!-- il numero della camera deve essere dinamico -->
+            <p>Piano 3</p> <!-- il numero del piano deve essere dinamico -->
+            <label>Contrassegna la camera come pulita: <button type="button">Pulita</button></label></br>
+        </section>
+
+    </main>
+</body>
+</html>
