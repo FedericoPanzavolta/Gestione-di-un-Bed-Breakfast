@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+
+{% block title %}Le mie prenotazioni — Locanda del Colle{% endblock %}
+
+{% block content %}
+
+<h2 class="mb-4">Le mie prenotazioni</h2>
+
+{% if prenotazioni %}
+    <div class="table-responsive">
+        <table class="table align-middle bg-white rounded">
+            <thead>
+                <tr>
+                    <th>Camera</th>
+                    <th>Arrivo</th>
+                    <th>Partenza</th>
+                    <th>Ospiti</th>
+                    <th>Stato</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for prenotazione in prenotazioni %}
+                <tr>
+                    <td>{{ prenotazione.camera.tipologia|capfirst }} — piano {{ prenotazione.piano }}, n. {{ prenotazione.numerocamera }}</td>
+                    <td>{{ prenotazione.dataarrivo }}</td>
+                    <td>{{ prenotazione.datapartenza }}</td>
+                    <td>{{ prenotazione.numeroospiti }}</td>
+                    <td>
+                    {% if prenotazione.stato == 'attiva' %}
+                        <span class="badge text-bg-info">Attiva</span>
+                    {% elif prenotazione.stato == 'completata' %}
+                        <span class="badge text-bg-success">Completata</span>
+                    {% else %}
+                        <span class="badge text-bg-secondary">Cancellata</span>
+                    {% endif %}
+                    </td>
+                    <td class="text-end">
+                    {% if prenotazione.stato == 'attiva' and not prenotazione.datacheckineffettivo %}
+                        <form method="post" action="{% url 'cancella_prenotazione' codice_prenotazione=prenotazione.codiceprenotazione %}" class="d-inline">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Confermi la cancellazione?');">
+                                Cancella
+                            </button>
+                        </form>
+                    {% elif prenotazione.stato == 'completata' %}
+                        <a class="btn btn-sm btn-clay" href="{% url 'lascia_recensione' codice_prenotazione=prenotazione.codiceprenotazione %}">
+                            Lascia una recensione
+                        </a>
+                    {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% else %}
+    <p class="text-muted">Non hai ancora effettuato nessuna prenotazione.</p>
+    <a href="{% url 'verifica_disponibilita' %}" class="btn btn-clay">Cerca una camera</a>
+{% endif %}
+
+{% endblock %}

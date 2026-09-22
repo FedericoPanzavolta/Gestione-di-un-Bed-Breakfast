@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+
+{% block title %}Prenota — {{ camera.tipologia|capfirst }}{% endblock %}
+
+{% block content %}
+
+<div class="row justify-content-center">
+    <div class="col-md-7">
+        <div class="card p-4">
+            <h2 class="mb-1">{{ camera.tipologia|capfirst }} — piano {{ camera.piano }}, n. {{ camera.numerocamera }}</h2>
+            <p class="text-muted mb-4">
+                Fino a {{ camera.numeromassimoospiti }} ospiti &middot; {{ camera.prezzobasenotte }} € / notte
+                <span class="d-block">{{ camera.descrizione }}</span>
+            </p>
+        
+            <form method="post">
+                {% csrf_token %}
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="data_arrivo" class="form-label">Arrivo</label>
+                        <input type="date" class="form-control" id="data_arrivo" name="data_arrivo" value="{{ request.GET.data_arrivo }}" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="data_partenza" class="form-label">Partenza</label>
+                        <input type="date" class="form-control" id="data_partenza" name="data_partenza" value="{{ request.GET.data_partenza }}" required>
+                    </div>
+                </div>
+            
+                <div class="mb-4">
+                    <label for="numero_ospiti" class="form-label">Numero ospiti</label>
+                    <input type="number" class="form-control" id="numero_ospiti" name="numero_ospiti" min="1" max="{{ camera.numeromassimoospiti }}" value="{{ request.GET.numero_ospiti|default:1 }}" required>
+                </div>
+
+                {% if servizi %}
+                    <fieldset class="mb-4">
+                        <legend class="h6">Servizi aggiuntivi</legend>
+                        {% for servizio in servizi %}
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="servizi" value="{{ servizio.nome }}" id="servizio-{{ forloop.counter }}">
+                                <label class="form-check-label" for="servizio-{{ forloop.counter }}">
+                                    {{ servizio.nome }} — {{ servizio.descrizione }} ({{ servizio.costo }} €)
+                                </label>
+                            </div>
+                        {% endfor %}
+                    </fieldset>
+                {% endif %}
+                
+                <button type="submit" class="btn btn-clay w-100">Conferma prenotazione</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
