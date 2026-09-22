@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+
+{% block title %}Accedi — Locanda del Colle{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-5">
+        <div class="card p-4">
+        <h2 class="mb-1">Accedi</h2>
+        <p class="text-muted mb-4">Con le stesse credenziali accedono sia gli ospiti sia il personale.</p>
+
+        <form method="post">
+        {% csrf_token %}
+
+        <div class="mb-3">
+            <label for="e_mail" class="form-label">E-mail</label>
+            <input type="email" class="form-control" id="e_mail" name="e_mail" required autofocus>
+        </div>
+
+        <div class="mb-4">
+            <label for="password" class="form-label">Password</label>
+            <input type="password" class="form-control" id="password" name="password" required>
+        </div>
+
+        <button type="submit" class="btn btn-clay w-100">Accedi</button>
+        </form>
+
+        <hr class="my-4">
+
+            <p class="mb-0 text-center small">
+            Non hai un account?
+            <a href="{% url 'registrazione_ospite' %}">Registrati come ospite</a>
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}
