@@ -35,12 +35,12 @@ CONSTRAINT ID_CAMERA_ID PRIMARY KEY (piano, numeroCamera)
     
 CREATE TABLE INCLUDE (
     nomeServizio VARCHAR(20) NOT NULL,
-    codicePrenotazione NUMERIC(6) NOT NULL,
+    codicePrenotazione INT NOT NULL,
     CONSTRAINT ID_INCLUDE_ID PRIMARY KEY (codicePrenotazione, nomeServizio)
 );
 
 CREATE TABLE OCCUPANTE (
-    codicePrenotazione NUMERIC(6) NOT NULL,
+    codicePrenotazione INT NOT NULL,
     nome VARCHAR(25) NOT NULL,
     cognome VARCHAR(25) NOT NULL,
     documentoIdentita CHAR(9) NOT NULL,
@@ -59,8 +59,8 @@ CREATE TABLE OSPITE (
 );
     
 CREATE TABLE PAGAMENTO (
-    codicePagamento NUMERIC(6) NOT NULL,
-    codicePrenotazione NUMERIC(6) NOT NULL,
+    codicePagamento INT NOT NULL AUTO_INCREMENT,
+    codicePrenotazione INT NOT NULL,
     importoTotale NUMERIC(8,2) NOT NULL,
     metodo VARCHAR(20) NOT NULL,
     data DATE NOT NULL,
@@ -82,7 +82,7 @@ CREATE TABLE PERSONALE (
 );
     
 CREATE TABLE PRENOTAZIONE (
-    codicePrenotazione NUMERIC(6) NOT NULL,
+    codicePrenotazione INT NOT NULL AUTO_INCREMENT,
     dataArrivo DATE NOT NULL,
     dataPartenza DATE NOT NULL,
     numeroOspiti NUMERIC(2) NOT NULL,
@@ -104,8 +104,8 @@ CREATE TABLE PULIZIA (
 );
     
 CREATE TABLE RECENSIONE (
-    codiceRecensione NUMERIC(6) NOT NULL,
-    codicePrenotazione NUMERIC(6) NOT NULL,
+    codiceRecensione INT NOT NULL AUTO_INCREMENT,
+    codicePrenotazione INT NOT NULL,
     voto NUMERIC(2) NOT NULL,
     commento VARCHAR(300),
     data DATE NOT NULL,
@@ -221,7 +221,7 @@ CREATE UNIQUE INDEX ID_PULIZIA_IND
 ON PULIZIA (piano, numeroCamera, data);
 
 CREATE INDEX REF_PULIZ_PERSO_IND
-ON PULIZIA (documentoIdentitaADDetto);
+ON PULIZIA (documentoIdentitaAddetto);
 
 CREATE UNIQUE INDEX ID_RECENSIONE_IND
 ON RECENSIONE (codiceRecensione);
