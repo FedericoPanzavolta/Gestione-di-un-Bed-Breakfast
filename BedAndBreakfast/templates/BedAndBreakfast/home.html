@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+
+{% block title %}Locanda del Colle — Bed &amp; Breakfast{% endblock %}
+
+{% block content %}
+
+<div class="p-5 mb-5 rounded" style="background-color: var(--pine); color: var(--sand);">
+        <h1 class="display-5 mb-3">Benvenuti alla Locanda del Colle</h1>
+    <p class="lead mb-4" style="max-width: 40rem;">
+    Un piccolo bed &amp; breakfast a conduzione familiare, tra colline e silenzio.
+    Gestisci qui le tue prenotazioni, o scopri le camere disponibili.
+    </p>
+
+    {% if not request.session.ospite_pk and not request.session.personale_pk %}
+        <a href="{% url 'verifica_disponibilita' %}" class="btn btn-clay btn-lg me-2">Cerca una camera</a>
+        <a href="{% url 'login' %}" class="btn btn-outline-light btn-lg">Accedi</a>
+    {% elif request.session.ospite_pk %}
+        <a href="{% url 'verifica_disponibilita' %}" class="btn btn-clay btn-lg me-2">Prenota una camera</a>
+        <a href="{% url 'le_mie_prenotazioni' %}" class="btn btn-outline-light btn-lg">Le mie prenotazioni</a>
+    {% else %}
+    {# personale loggato: rimando alla prima azione utile per il suo ruolo #}
+    {% if request.session.ruolo_personale == 'receptionist' %}
+        <a href="{% url 'arrivi_partenze' %}" class="btn btn-clay btn-lg">Arrivi &amp; partenze di oggi</a>
+    {% elif request.session.ruolo_personale == 'addetto_pulizie' %}
+        <a href="{% url 'lista_camere_da_pulire' %}" class="btn btn-clay btn-lg">Camere da pulire</a>
+    {% elif request.session.ruolo_personale == 'amministratore' %}
+        <a href="{% url 'tasso_occupazione' %}" class="btn btn-clay btn-lg">Vai alle statistiche</a>
+    {% endif %}
+{% endif %}
+</div>
+
+<div class="row g-4">
+    <div class="col-md-4">
+        <div class="card p-4 h-100">
+            <h3 class="h5">Camere</h3>
+            <p class="text-muted mb-0">
+                Singole, doppie, matrimoniali e suite: ogni camera è pensata per un soggiorno tranquillo.
+            </p>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card p-4 h-100">
+            <h3 class="h5">Servizi aggiuntivi</h3>
+            <p class="text-muted mb-0">
+                Colazione, transfer, noleggio biciclette, late check-out — da aggiungere alla prenotazione.
+            </p>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card p-4 h-100">
+            <h3 class="h5">Recensioni</h3>
+            <p class="text-muted mb-0">
+                Al termine del soggiorno, raccontaci com'è andata: la tua opinione conta.
+            </p>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
