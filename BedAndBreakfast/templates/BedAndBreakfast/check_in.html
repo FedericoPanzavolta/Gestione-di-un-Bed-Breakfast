@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+
+{% block title %}Check-in — Locanda del Colle{% endblock %}
+
+{% block content %}
+
+<div class="row justify-content-center">
+    <div class="col-md-7">
+        <div class="card p-4">
+            <h2 class="mb-1">Check-in</h2>
+            <p class="text-muted mb-4">
+                {{ prenotazione.camera.tipologia|capfirst }} — piano {{ prenotazione.piano }}, n. {{ prenotazione.numerocamera }}
+                <span class="d-block">
+                    {{ prenotazione.dataarrivo }} &rarr; {{ prenotazione.datapartenza }}
+                    ({{ prenotazione.numeroospiti }} ospiti previsti)
+                </span>
+                <span class="d-block">
+                    Ospite: {{ prenotazione.documentoidentitaospite.nome }} {{ prenotazione.documentoidentitaospite.cognome }}
+                </span>
+            </p>
+        
+            <form method="post">
+                {% csrf_token %}
+
+                <p class="small text-muted mb-2">
+                    Occupanti aggiuntivi oltre all'ospite che ha prenotato (facoltativo):
+                </p>
+                <div class="occupanti-righe">
+                    <div class="row g-2 mb-2 occupante-riga">
+                        <div class="col-md-4">
+                            <input type="text" class="form-control form-control-sm" name="occupante_nome" placeholder="Nome">
+                        </div>
+                        <div class="col-md-4">
+                            <input type="text" class="form-control form-control-sm" name="occupante_cognome" placeholder="Cognome">
+                        </div>
+                        <div class="col-md-4">
+                            <input type="text" class="form-control form-control-sm" name="occupante_documento" placeholder="Documento d'identità">
+                        </div>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-sm btn-link px-0 aggiungi-occupante">+ aggiungi occupante</button>
+            
+                <button type="submit" class="btn btn-clay w-100 mt-4">Conferma check-in</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    document.querySelectorAll('.aggiungi-occupante').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var righe = btn.closest('form').querySelector('.occupanti-righe');
+            var ultima = righe.querySelector('.occupante-riga');
+            var nuova = ultima.cloneNode(true);
+            nuova.querySelectorAll('input').forEach(function (input) { input.value = ''; });
+            righe.appendChild(nuova);
+        });
+    });
+</script>
+{% endblock %}

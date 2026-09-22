@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+
+{% block title %}Camere da pulire — Locanda del Colle{% endblock %}
+
+{% block content %}
+
+<h2 class="mb-4">Camere da pulire</h2>
+
+{% if camere %}
+    <div class="row g-3">
+    {% for camera in camere %}
+        <div class="col-md-4">
+            <div class="card p-3 h-100 d-flex flex-column">
+                <h3 class="h6 mb-1">{{ camera.tipologia|capfirst }}</h3>
+                <p class="text-muted small mb-3">Piano {{ camera.piano }}, n. {{ camera.numerocamera }}</p>
+                
+                {% if request.session.ruolo_personale == 'addetto_pulizie' %}
+                    <form method="post" action="{% url 'camera_pulita' piano=camera.piano numero_camera=camera.numerocamera %}" class="mt-auto">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-clay btn-sm w-100">Segna come pulita</button>
+                    </form>
+                {% endif %}
+            </div>
+        </div>
+    {% endfor %}
+    </div>
+{% else %}
+    <p class="text-muted">Nessuna camera da pulire al momento.</p>
+{% endif %}
+
+{% endblock %}

@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+
+{% block title %}Arrivi &amp; partenze — Locanda del Colle{% endblock %}
+
+{% block content %}
+
+<h2 class="mb-4">Arrivi &amp; partenze</h2>
+
+<form method="get" class="row g-3 align-items-end mb-5">
+    <div class="col-md-3">
+        <label for="data" class="form-label">Data</label>
+        <input type="date" class="form-control" id="data" name="data" value="{{ data }}">
+    </div>
+    <div class="col-md-2">
+        <button type="submit" class="btn btn-clay w-100">Vai</button>
+    </div>
+</form>
+
+<h3 class="h5 mb-3">Arrivi previsti</h3>
+{% if arrivi %}
+    <div class="row g-3 mb-5">
+    {% for prenotazione in arrivi %}
+        <div class="col-md-6">
+            <div class="card p-3 h-100 d-flex flex-row justify-content-between align-items-center flex-wrap gap-2">
+                <div>
+                    <strong>{{ prenotazione.camera.tipologia|capfirst }}</strong>
+                    - piano {{ prenotazione.piano }}, n. {{ prenotazione.numerocamera }}
+                    <span class="d-block text-muted small">
+                        Ospite: {{ prenotazione.documentoidentitaospite.nome }} {{ prenotazione.documentoidentitaospite.cognome }}
+                        &middot; {{ prenotazione.numeroospiti }} ospiti previsti
+                    </span>
+                </div>
+            
+            {% if prenotazione.datacheckineffettivo %}
+                <span class="badge text-bg-success">Check-in effettuato</span>
+            {% else %}
+                <a class="btn btn-sm btn-clay" href="{% url 'check_in' codice_prenotazione=prenotazione.codiceprenotazione %}">
+                    Vai al check-in
+                </a>
+            {% endif %}
+            </div>
+        </div>
+    {% endfor %}
+    </div>
+{% else %}
+    <p class="text-muted">Nessun arrivo previsto per questa data.</p>
+{% endif %}
+
+<h3 class="h5 mb-3">Partenze previste</h3>
+{% if partenze %}
+    <div class="row g-3">
+    {% for prenotazione in partenze %}
+        <div class="col-md-6">
+            <div class="card p-3 h-100 d-flex flex-row justify-content-between align-items-center flex-wrap gap-2">
+                <div>
+                    <strong>{{ prenotazione.camera.tipologia|capfirst }}</strong>
+                    - piano {{ prenotazione.piano }}, n. {{ prenotazione.numerocamera }}
+                    <span class="d-block text-muted small">
+                        Ospite: {{ prenotazione.documentoidentitaospite.nome }} {{ prenotazione.documentoidentitaospite.cognome }}
+                    </span>
+                </div>
+                <a class="btn btn-sm btn-clay" href="{% url 'check_out' codice_prenotazione=prenotazione.codiceprenotazione %}">
+                    Vai al check-out
+                </a>
+            </div>
+        </div>
+    {% endfor %}
+    </div>
+{% else %}
+    <p class="text-muted">Nessuna partenza prevista per questa data.</p>
+{% endif %}
+
+{% endblock %}
