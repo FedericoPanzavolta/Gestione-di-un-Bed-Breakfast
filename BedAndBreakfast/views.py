@@ -252,29 +252,31 @@ def check_in(request, codice_prenotazione):
         messages.error(request, "Check-in già registrato per questa prenotazione.")
         return redirect('arrivi_partenze')
 
-    with transaction.atomic():
-        prenotazione.datacheckineffettivo = timezone.now().date()
-        prenotazione.save()
+    if request.method == 'POST':
+        with transaction.atomic():
+            prenotazione.datacheckineffettivo = timezone.now().date()
+            prenotazione.save()
 
-        camera = Camera.objects.get(piano=prenotazione.piano, numerocamera=prenotazione.numerocamera)
-        camera.stato = 'occupata'
-        camera.save()
+            camera = Camera.objects.get(piano=prenotazione.piano, numerocamera=prenotazione.numerocamera)
+            camera.stato = 'occupata'
+            camera.save()
 
-        # eventuali occupanti aggiuntivi indicati dalla receptionist (oltre all'ospite)
-        for nome, cognome, documento in zip(
-            request.POST.getlist('occupante_nome'),
-            request.POST.getlist('occupante_cognome'),
-            request.POST.getlist('occupante_documento'),
-        ):
-            if documento:
-                Occupante.objects.get_or_create(
-                    codiceprenotazione=prenotazione,
-                    documentoidentita=documento,
-                    defaults={'nome': nome, 'cognome': cognome},
-                )
+            for nome, cognome, documento in zip(
+                request.POST.getlist('occupante_nome'),
+                request.POST.getlist('occupante_cognome'),
+                request.POST.getlist('occupante_documento'),
+            ):
+                if documento:
+                    Occupante.objects.get_or_create(
+                        codiceprenotazione=prenotazione,
+                        documentoidentita=documento,
+                        defaults={'nome': nome, 'cognome': cognome},
+                    )
 
-    messages.success(request, "Check-in registrato.")
-    return redirect('arrivi_partenze')
+        messages.success(request, "Check-in registrato.")
+        return redirect('arrivi_partenze')
+
+    return render(request, 'receptionist/check_in.html', {'prenotazione': prenotazione})
 
 
 @personale_richiesto('receptionist')
