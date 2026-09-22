@@ -159,7 +159,7 @@ def effettua_prenotazione(request, piano, numero_camera):
                 documentoidentitaospite_id=request.session['ospite_pk'],
                 piano=piano,
                 numerocamera=numero_camera,
-                datainiziostagione=stagione if stagione else None, #! controllare correttezza
+                datainiziostagione=stagione if stagione else None,
             )
             for nome_servizio in nomi_servizi:
                 Include.objects.create(
