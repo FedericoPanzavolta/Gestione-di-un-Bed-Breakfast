@@ -692,6 +692,37 @@ def servizi_sotto_soglia(request):
 
 
 # ---------------------------------------------------------------------------
+# Views di gestione per l'amministratore
+# ---------------------------------------------------------------------------
+
+@personale_richiesto('amministratore')
+def gestione_camere(request):
+    """Elenco di tutte le camere, con accesso alle azioni di modifica/disattivazione."""
+    camere = Camera.objects.all().order_by('piano', 'numerocamera')
+    return render(request, 'admin/gestione_camere.html', {'camere': camere})
+
+
+@personale_richiesto('amministratore')
+def gestione_personale(request):
+    """Elenco di tutto il personale, con accesso alle azioni di modifica/disattivazione."""
+    personale = Personale.objects.all().order_by('cognome', 'nome')
+    return render(request, 'admin/gestione_personale.html', {'personale': personale})
+
+
+@personale_richiesto('amministratore')
+def gestione_servizi(request):
+    """Elenco di tutti i servizi aggiuntivi, con accesso alle azioni di modifica/disattivazione."""
+    servizi = ServizioAggiuntivo.objects.all().order_by('nome')
+    return render(request, 'admin/gestione_servizi.html', {'servizi': servizi})
+
+
+@personale_richiesto('amministratore')
+def gestione_stagioni(request):
+    """Elenco delle stagioni definite (nessuna modifica/eliminazione prevista, Ambiguità 9)."""
+    stagioni = Stagione.objects.all().order_by('datainizio')
+    return render(request, 'admin/gestione_stagioni.html', {'stagioni': stagioni})
+
+# ---------------------------------------------------------------------------
 # Login / logout minimali (necessari per popolare la sessione usata sopra)
 # ---------------------------------------------------------------------------
 
