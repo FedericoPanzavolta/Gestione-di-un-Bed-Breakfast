@@ -12,19 +12,19 @@
     </p>
 
     {% if not request.session.ospite_pk and not request.session.personale_pk %}
-        <a href="{% url 'verifica_disponibilita' %}" class="btn btn-clay btn-lg me-2">Cerca una camera</a>
-        <a href="{% url 'login' %}" class="btn btn-outline-light btn-lg">Accedi</a>
+        <a href="{% url 'BedAndBreakfast:verifica_disponibilita' %}" class="btn btn-clay btn-lg me-2">Cerca una camera</a>
+        <a href="{% url 'BedAndBreakfast:login' %}" class="btn btn-outline-light btn-lg">Accedi</a>
     {% elif request.session.ospite_pk %}
-        <a href="{% url 'verifica_disponibilita' %}" class="btn btn-clay btn-lg me-2">Prenota una camera</a>
-        <a href="{% url 'le_mie_prenotazioni' %}" class="btn btn-outline-light btn-lg">Le mie prenotazioni</a>
+        <a href="{% url 'BedAndBreakfast:verifica_disponibilita' %}" class="btn btn-clay btn-lg me-2">Prenota una camera</a>
+        <a href="{% url 'BedAndBreakfast:le_mie_prenotazioni' %}" class="btn btn-outline-light btn-lg">Le mie prenotazioni</a>
     {% else %}
     {# personale loggato: rimando alla prima azione utile per il suo ruolo #}
     {% if request.session.ruolo_personale == 'receptionist' %}
-        <a href="{% url 'arrivi_partenze' %}" class="btn btn-clay btn-lg">Arrivi &amp; partenze di oggi</a>
+        <a href="{% url 'BedAndBreakfast:arrivi_partenze' %}" class="btn btn-clay btn-lg">Arrivi &amp; partenze di oggi</a>
     {% elif request.session.ruolo_personale == 'addetto_pulizie' %}
-        <a href="{% url 'lista_camere_da_pulire' %}" class="btn btn-clay btn-lg">Camere da pulire</a>
+        <a href="{% url 'BedAndBreakfast:lista_camere_da_pulire' %}" class="btn btn-clay btn-lg">Camere da pulire</a>
     {% elif request.session.ruolo_personale == 'amministratore' %}
-        <a href="{% url 'tasso_occupazione' %}" class="btn btn-clay btn-lg">Vai alle statistiche</a>
+        <a href="{% url 'BedAndBreakfast:tasso_occupazione' %}" class="btn btn-clay btn-lg">Vai alle statistiche</a>
     {% endif %}
 {% endif %}
 </div>

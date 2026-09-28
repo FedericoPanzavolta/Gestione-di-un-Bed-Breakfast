@@ -89,7 +89,7 @@
 
 <nav class="navbar navbar-expand-md navbar-dark">
     <div class="container">
-    <a class="navbar-brand" href="{% url 'home' %}">Locanda del Colle</a>
+    <a class="navbar-brand" href="{% url 'BedAndBreakfast:home' %}">Locanda del Colle</a>
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
         <span class="navbar-toggler-icon"></span>
     </button>
@@ -99,13 +99,13 @@
         {% if request.session.ospite_pk %}
             {# --- Navbar per l'OSPITE loggato --- #}
             <li class="nav-item">
-                <a class="nav-link" href="{% url 'verifica_disponibilita' %}">Prenota una camera</a>
+                <a class="nav-link" href="{% url 'BedAndBreakfast:verifica_disponibilita' %}">Prenota una camera</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="{% url 'le_mie_prenotazioni' %}">Le mie prenotazioni</a>
+                <a class="nav-link" href="{% url 'BedAndBreakfast:le_mie_prenotazioni' %}">Le mie prenotazioni</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="{% url 'logout' %}">Esci</a>
+                <a class="nav-link" href="{% url 'BedAndBreakfast:logout' %}">Esci</a>
             </li>
 
         {% elif request.session.personale_pk %}
@@ -113,15 +113,15 @@
 
             {% if request.session.ruolo_personale == 'receptionist' %}
             <li class="nav-item">
-                <a class="nav-link" href="{% url 'arrivi_partenze' %}">Arrivi &amp; partenze</a>
+                <a class="nav-link" href="{% url 'BedAndBreakfast:arrivi_partenze' %}">Arrivi &amp; partenze</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="{% url 'lista_camere_da_pulire' %}">Camere da pulire</a>
+                <a class="nav-link" href="{% url 'BedAndBreakfast:lista_camere_da_pulire' %}">Camere da pulire</a>
             </li>
 
             {% elif request.session.ruolo_personale == 'addetto_pulizie' %}
             <li class="nav-item">
-                <a class="nav-link" href="{% url 'lista_camere_da_pulire' %}">Camere da pulire</a>
+                <a class="nav-link" href="{% url 'BedAndBreakfast:lista_camere_da_pulire' %}">Camere da pulire</a>
             </li>
 
             {% elif request.session.ruolo_personale == 'amministratore' %}
@@ -130,10 +130,10 @@
                     Gestione
                 </a>
                 <ul class="dropdown-menu dropdown-menu-end">
-                    <li><a class="dropdown-item" href="{% url 'gestione_camere' %}">Camere</a></li>
-                    <li><a class="dropdown-item" href="{% url 'gestione_personale' %}">Personale</a></li>
-                    <li><a class="dropdown-item" href="{% url 'gestione_servizi' %}">Servizi aggiuntivi</a></li>
-                    <li><a class="dropdown-item" href="{% url 'gestione_stagioni' %}">Stagioni</a></li>
+                    <li><a class="dropdown-item" href="{% url 'BedAndBreakfast:gestione_camere' %}">Camere</a></li>
+                    <li><a class="dropdown-item" href="{% url 'BedAndBreakfast:gestione_personale' %}">Personale</a></li>
+                    <li><a class="dropdown-item" href="{% url 'BedAndBreakfast:gestione_servizi' %}">Servizi aggiuntivi</a></li>
+                    <li><a class="dropdown-item" href="{% url 'BedAndBreakfast:gestione_stagioni' %}">Stagioni</a></li>
                 </ul>
             </li>
             <li class="nav-item dropdown">
@@ -141,11 +141,11 @@
                     Statistiche
                 </a>
                 <ul class="dropdown-menu dropdown-menu-end">
-                    <li><a class="dropdown-item" href="{% url 'tasso_occupazione' %}">Tasso di occupazione</a></li>
-                    <li><a class="dropdown-item" href="{% url 'fatturato_mensile' %}">Fatturato mensile</a></li>
-                    <li><a class="dropdown-item" href="{% url 'servizi_piu_richiesti' %}">Servizi più richiesti</a></li>
-                    <li><a class="dropdown-item" href="{% url 'recensioni_estreme' %}">Recensioni estreme</a></li>
-                    <li><a class="dropdown-item" href="{% url 'servizi_sotto_soglia' %}">Servizi sotto soglia</a></li>
+                    <li><a class="dropdown-item" href="{% url 'BedAndBreakfast:tasso_occupazione' %}">Tasso di occupazione</a></li>
+                    <li><a class="dropdown-item" href="{% url 'BedAndBreakfast:fatturato_mensile' %}">Fatturato mensile</a></li>
+                    <li><a class="dropdown-item" href="{% url 'BedAndBreakfast:servizi_piu_richiesti' %}">Servizi più richiesti</a></li>
+                    <li><a class="dropdown-item" href="{% url 'BedAndBreakfast:recensioni_estreme' %}">Recensioni estreme</a></li>
+                    <li><a class="dropdown-item" href="{% url 'BedAndBreakfast:servizi_sotto_soglia' %}">Servizi sotto soglia</a></li>
                 </ul>
             </li>
             {% endif %}
@@ -154,19 +154,19 @@
                 <span class="badge badge-ruolo rounded-pill me-2">{{ request.session.ruolo_personale }}</span>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="{% url 'logout' %}">Esci</a>
+                <a class="nav-link" href="{% url 'BedAndBreakfast:logout' %}">Esci</a>
             </li>
 
         {% else %}
             {# --- Nessuno loggato --- #}
             <li class="nav-item">
-                <a class="nav-link" href="{% url 'verifica_disponibilita' %}">Le nostre camere</a>
+                <a class="nav-link" href="{% url 'BedAndBreakfast:verifica_disponibilita' %}">Le nostre camere</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="{% url 'registrazione_ospite' %}">Registrati</a>
+                <a class="nav-link" href="{% url 'BedAndBreakfast:registrazione_ospite' %}">Registrati</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="{% url 'login' %}">Accedi</a>
+                <a class="nav-link" href="{% url 'BedAndBreakfast:login' %}">Accedi</a>
             </li>
         {% endif %}
 

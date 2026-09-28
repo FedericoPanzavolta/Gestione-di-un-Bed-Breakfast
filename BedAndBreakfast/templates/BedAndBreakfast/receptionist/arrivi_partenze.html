@@ -34,7 +34,7 @@
             {% if prenotazione.datacheckineffettivo %}
                 <span class="badge text-bg-success">Check-in effettuato</span>
             {% else %}
-                <a class="btn btn-sm btn-clay" href="{% url 'check_in' codice_prenotazione=prenotazione.codiceprenotazione %}">
+                <a class="btn btn-sm btn-clay" href="{% url 'BedAndBreakfast:check_in' codice_prenotazione=prenotazione.codiceprenotazione %}">
                     Vai al check-in
                 </a>
             {% endif %}
@@ -59,7 +59,7 @@
                         Ospite: {{ prenotazione.documentoidentitaospite.nome }} {{ prenotazione.documentoidentitaospite.cognome }}
                     </span>
                 </div>
-                <a class="btn btn-sm btn-clay" href="{% url 'check_out' codice_prenotazione=prenotazione.codiceprenotazione %}">
+                <a class="btn btn-sm btn-clay" href="{% url 'BedAndBreakfast:check_out' codice_prenotazione=prenotazione.codiceprenotazione %}">
                     Vai al check-out
                 </a>
             </div>
