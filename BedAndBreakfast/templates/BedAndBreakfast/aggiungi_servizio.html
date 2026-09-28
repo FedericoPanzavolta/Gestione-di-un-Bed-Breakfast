@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+
+{% block title %}Aggiungi servizio — Locanda del Colle{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card p-4">
+            <h2 class="mb-4">Aggiungi servizio aggiuntivo</h2>
+            
+            <form method="post">
+            {% csrf_token %}
+
+                <div class="mb-3">
+                    <label for="nome" class="form-label">Nome</label>
+                    <input type="text" class="form-control" id="nome" name="nome" maxlength="20" required>
+                </div>
+            
+                <div class="mb-3">
+                    <label for="descrizione" class="form-label">Descrizione</label>
+                    <textarea class="form-control" id="descrizione" name="descrizione" rows="3" required></textarea>
+                </div>
+            
+                <div class="mb-4">
+                    <label for="costo" class="form-label">Costo (€)</label>
+                    <input type="number" step="0.01" class="form-control" id="costo" name="costo" required>
+                </div>
+            
+                <button type="submit" class="btn btn-clay w-100">Aggiungi</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+
+{% block title %}Modifica servizio — Locanda del Colle{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card p-4">
+            <h2 class="mb-1">Modifica servizio</h2>
+            <p class="text-muted mb-4">
+                {{ servizio.nome }}
+                <span class="d-block small">Il nome non è modificabile da qui: è la chiave del servizio.</span>
+            </p>
+        
+            <form method="post">
+            {% csrf_token %}
+
+                <div class="mb-3">
+                    <label for="descrizione" class="form-label">Descrizione</label>
+                    <textarea class="form-control" id="descrizione" name="descrizione" rows="3" required>{{ servizio.descrizione }}</textarea>
+                </div>
+            
+                <div class="mb-4">
+                    <label for="costo" class="form-label">Costo (€)</label>
+                    <input type="number" step="0.01" class="form-control" id="costo" name="costo" value="{{ servizio.costo }}" required>
+                </div>
+            
+                <button type="submit" class="btn btn-clay w-100">Salva modifiche</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
