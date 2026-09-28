@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+
+{% block title %}Gestione personale — Locanda del Colle{% endblock %}
+
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="mb-0">Personale</h2>
+    <a href="{% url 'aggiungi_personale' %}" class="btn btn-clay">+ Aggiungi membro</a>
+</div>
+
+{% if personale %}
+    <div class="table-responsive">
+        <table class="table align-middle bg-white rounded">
+            <thead>
+                <tr>
+                    <th>Nome</th>
+                    <th>Ruolo</th>
+                    <th>Telefono</th>
+                    <th>E-mail</th>
+                    <th>Attivo</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for persona in personale %}
+                <tr>
+                    <td>{{ persona.nome }} {{ persona.cognome }}</td>
+                    <td>{{ persona.ruolo|capfirst }}</td>
+                    <td>{{ persona.telefono }}</td>
+                    <td>{{ persona.e_mail }}</td>
+                    <td>
+                    {% if persona.attivo %}
+                        <span class="badge text-bg-success">Sì</span>
+                    {% else %}
+                        <span class="badge text-bg-secondary">No</span>
+                    {% endif %}
+                    </td>
+                    <td class="text-end">
+                        <a class="btn btn-sm btn-outline-secondary" href="{% url 'modifica_personale' documento_identita=persona.documentoidentita %}">
+                            Modifica
+                        </a>
+                    {% if persona.attivo %}
+                        <form method="post" action="{% url 'elimina_personale' documento_identita=persona.documentoidentita %}" class="d-inline">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Disattivare questo membro del personale?');">
+                                Disattiva
+                            </button>
+                        </form>
+                    {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% else %}
+    <p class="text-muted">Nessun membro del personale registrato.</p>
+{% endif %}
+
+{% endblock %}

@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+
+{% block title %}Aggiungi personale — Locanda del Colle{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card p-4">
+            <h2 class="mb-4">Aggiungi membro del personale</h2>
+            
+            <form method="post">
+            {% csrf_token %}
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="nome" class="form-label">Nome</label>
+                        <input type="text" class="form-control" id="nome" name="nome" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="cognome" class="form-label">Cognome</label>
+                        <input type="text" class="form-control" id="cognome" name="cognome" required>
+                    </div>
+                </div>
+            
+                <div class="mb-3">
+                    <label for="documento_identita" class="form-label">Documento d'identità</label>
+                    <input type="text" class="form-control" id="documento_identita" name="documento_identita" maxlength="9" required>
+                </div>
+            
+                <div class="mb-3">
+                    <label for="telefono" class="form-label">Telefono</label>
+                    <input type="tel" class="form-control" id="telefono" name="telefono" required>
+                </div>
+            
+                <div class="mb-3">
+                    <label for="e_mail" class="form-label">E-mail</label>
+                    <input type="email" class="form-control" id="e_mail" name="e_mail" required>
+                </div>
+            
+                <div class="mb-3">
+                    <label for="password" class="form-label">Password provvisoria</label>
+                    <input type="password" class="form-control" id="password" name="password" maxlength="16" required>
+                </div>
+            
+                <div class="mb-4">
+                    <label for="ruolo" class="form-label">Ruolo</label>
+                    <select class="form-select" id="ruolo" name="ruolo" required>
+                        <option value="receptionist">Receptionist</option>
+                        <option value="addetto_pulizie">Addetto pulizie</option>
+                        <option value="amministratore">Amministratore</option>
+                    </select>
+                </div>
+            
+                <button type="submit" class="btn btn-clay w-100">Aggiungi</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
