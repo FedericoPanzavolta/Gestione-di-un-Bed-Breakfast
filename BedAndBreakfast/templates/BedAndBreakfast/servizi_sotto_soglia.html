@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+
+{% block title %}Servizi sotto soglia — Locanda del Colle{% endblock %}
+
+{% block content %}
+
+<h2 class="mb-1">Servizi aggiuntivi sotto soglia</h2>
+<p class="text-muted mb-4">
+    Servizi il cui fatturato, in una data stagione, non ha raggiunto la soglia indicata.
+</p>
+
+<div class="card p-4 mb-5">
+    <form method="get" class="row g-3 align-items-end">
+        <div class="col-md-5">
+            <label for="stagione" class="form-label">Stagione</label>
+            <select class="form-select" id="stagione" name="stagione" required>
+                <option value="" selected disabled>Seleziona una stagione</option>
+            {% for s in stagioni %}
+                <option value="{{ s.datainizio|date:'Y-m-d' }}" {% if request.GET.stagione == s.datainizio|date:'Y-m-d' %}selected{% endif %}>
+                    {{ s.nome }} ({{ s.datainizio }} &rarr; {{ s.datafine }})
+                </option>
+            {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label for="soglia" class="form-label">Soglia (€)</label>
+            <input type="number" step="0.01" class="form-control" id="soglia" name="soglia" value="{{ request.GET.soglia }}" required>
+        </div>
+        <div class="col-md-3">
+            <button type="submit" class="btn btn-clay w-100">Calcola</button>
+        </div>
+    </form>
+</div>
+
+{% if risultati is not None %}
+    {% if risultati %}
+        <div class="table-responsive">
+            <table class="table align-middle bg-white rounded">
+                <thead>
+                    <tr>
+                        <th>Servizio</th>
+                        <th>Fatturato nella stagione</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for nome, totale in risultati.items %}
+                    <tr>
+                        <td>{{ nome }}</td>
+                        <td>{{ totale }} €</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p class="text-muted">Nessun servizio sotto soglia per questa stagione.</p>
+    {% endif %}
+{% endif %}
+
+{% endblock %}

@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+
+{% block title %}Servizi più richiesti — Locanda del Colle{% endblock %}
+
+{% block content %}
+
+<h2 class="mb-4">Servizi aggiuntivi più richiesti</h2>
+
+<div class="card p-4 mb-5">
+    <form method="get" class="row g-3 align-items-end">
+        <div class="col-md-4">
+            <label for="data_inizio" class="form-label">Dal</label>
+            <input type="date" class="form-control" id="data_inizio" name="data_inizio" value="{{ request.GET.data_inizio }}" required>
+        </div>
+        <div class="col-md-4">
+            <label for="data_fine" class="form-label">Al</label>
+            <input type="date" class="form-control" id="data_fine" name="data_fine" value="{{ request.GET.data_fine }}" required>
+        </div>
+        <div class="col-md-3">
+            <button type="submit" class="btn btn-clay w-100">Calcola</button>
+        </div>
+    </form>
+</div>
+
+{% if risultati is not None %}
+    {% if risultati %}
+        <ol class="list-group list-group-numbered">
+        {% for riga in risultati %}
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                {{ riga.nomeservizio }}
+                <span class="badge text-bg-light border">{{ riga.richieste }} richieste</span>
+            </li>
+        {% endfor %}
+        </ol>
+    {% else %}
+        <p class="text-muted">Nessuna richiesta di servizi nel periodo indicato.</p>
+    {% endif %}
+{% endif %}
+
+{% endblock %}

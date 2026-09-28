@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+
+{% block title %}Fatturato mensile — Locanda del Colle{% endblock %}
+
+{% block content %}
+
+<h2 class="mb-4">Fatturato mensile</h2>
+
+<div class="card p-4 mb-5">
+    <form method="get" class="row g-3 align-items-end">
+        <div class="col-md-3">
+            <label for="anno" class="form-label">Anno</label>
+            <input type="number" class="form-control" id="anno" name="anno" value="{{ anno }}" required>
+        </div>
+        <div class="col-md-3">
+            <label for="mese" class="form-label">Mese</label>
+            <select class="form-select" id="mese" name="mese" required>
+                <option value="1" {% if mese == 1 %}selected{% endif %}>Gennaio</option>
+                <option value="2" {% if mese == 2 %}selected{% endif %}>Febbraio</option>
+                <option value="3" {% if mese == 3 %}selected{% endif %}>Marzo</option>
+                <option value="4" {% if mese == 4 %}selected{% endif %}>Aprile</option>
+                <option value="5" {% if mese == 5 %}selected{% endif %}>Maggio</option>
+                <option value="6" {% if mese == 6 %}selected{% endif %}>Giugno</option>
+                <option value="7" {% if mese == 7 %}selected{% endif %}>Luglio</option>
+                <option value="8" {% if mese == 8 %}selected{% endif %}>Agosto</option>
+                <option value="9" {% if mese == 9 %}selected{% endif %}>Settembre</option>
+                <option value="10" {% if mese == 10 %}selected{% endif %}>Ottobre</option>
+                <option value="11" {% if mese == 11 %}selected{% endif %}>Novembre</option>
+                <option value="12" {% if mese == 12 %}selected{% endif %}>Dicembre</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <button type="submit" class="btn btn-clay w-100">Calcola</button>
+        </div>
+    </form>
+</div>
+
+{% if fatturato %}
+    <div class="table-responsive">
+        <table class="table align-middle bg-white rounded">
+            <thead>
+                <tr>
+                    <th>Tipologia camera</th>
+                    <th>Fatturato</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for tipologia, importo in fatturato.items %}
+                <tr>
+                    <td>{{ tipologia|capfirst }}</td>
+                    <td>{{ importo }} €</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr class="fw-semibold">
+                    <td>Totale</td>
+                    <td>{{ totale }} €</td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+{% else %}
+    <p class="text-muted">Nessun pagamento registrato per il periodo selezionato.</p>
+{% endif %}
+
+{% endblock %}

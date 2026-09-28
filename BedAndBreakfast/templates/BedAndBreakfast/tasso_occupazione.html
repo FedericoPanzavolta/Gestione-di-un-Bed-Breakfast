@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+
+{% block title %}Tasso di occupazione — Locanda del Colle{% endblock %}
+
+{% block content %}
+
+<h2 class="mb-4">Tasso di occupazione</h2>
+
+<div class="card p-4 mb-5">
+    <form method="get" class="row g-3 align-items-end">
+        <div class="col-md-4">
+            <label for="data_inizio" class="form-label">Dal</label>
+            <input type="date" class="form-control" id="data_inizio" name="data_inizio" value="{{ request.GET.data_inizio }}" required>
+        </div>
+        <div class="col-md-4">
+            <label for="data_fine" class="form-label">Al</label>
+            <input type="date" class="form-control" id="data_fine" name="data_fine" value="{{ request.GET.data_fine }}" required>
+        </div>
+        <div class="col-md-3">
+            <button type="submit" class="btn btn-clay w-100">Calcola</button>
+        </div>
+    </form>
+</  div>
+
+{%   if risultati is not None %}
+    <div class="table-responsive">
+        <table class="table align-middle bg-white rounded">
+            <thead>
+                <tr>
+                    <th>Camera</th>
+                    <th>Tipologia</th>
+                    <th>Tasso di occupazione</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for riga in risultati %}
+                <tr>
+                    <td>Piano {{ riga.camera.piano }}, n. {{ riga.camera.numerocamera }}</td>
+                    <td>{{ riga.camera.tipologia|capfirst }}</td>
+                    <td>
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="progress flex-grow-1" style="height: 8px; max-width: 10rem;">
+                                <div class="progress-bar" style="width: {{ riga.tasso_percentuale }}%; background-color: var(--clay);"></div>
+                            </div>
+                            <span>{{ riga.tasso_percentuale }}%</span>
+                        </div>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endif %}
+
+{% endblock %}
