@@ -645,27 +645,22 @@ def servizi_piu_richiesti(request):
 
 @personale_richiesto('amministratore')
 def recensioni_estreme(request):
-    """A8 - Per ogni tipologia di camera, la camera con media recensioni più alta e più bassa.
-
-    NOTA: la traversata 'codiceprenotazione__camera__tipologia' passa per il
-    ForeignObject a chiave composta definito in Prenotazione verso Camera;
-    verificare che si comporti come atteso nella vostra versione di Django,
-    in caso contrario sostituire con una seconda query su Camera per id.
-    """
+    """A8 - Per ogni tipologia di camera, la camera con media recensioni più alta e più bassa."""
     medie_per_camera = (
         Recensione.objects
-        .values(
-            'codiceprenotazione__piano',
-            'codiceprenotazione__numerocamera',
-            'codiceprenotazione__camera__tipologia',
-        )
+        .values('codiceprenotazione__piano', 'codiceprenotazione__numerocamera')
         .annotate(media_voto=Avg('voto'))
     )
 
+    # una sola query su Camera (una ventina di righe), poi lookup in memoria
+    tipologia_per_camera = {
+        (c.piano, c.numerocamera): c.tipologia for c in Camera.objects.all()
+    }
+
     per_tipologia = {}
     for riga in medie_per_camera:
-        tipologia = riga['codiceprenotazione__camera__tipologia']
-        per_tipologia.setdefault(tipologia, []).append(riga)
+        chiave = (riga['codiceprenotazione__piano'], riga['codiceprenotazione__numerocamera'])
+        per_tipologia.setdefault(tipologia_per_camera[chiave], []).append(riga)
 
     estremi_per_tipologia = {
         tipologia: {
