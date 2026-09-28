@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+
+{% block title %}Gestione camere — Locanda del Colle{% endblock %}
+
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="mb-0">Camere</h2>
+    <a href="{% url 'aggiungi_camera' %}" class="btn btn-clay">+ Aggiungi camera</a>
+</div>
+
+{% if camere %}
+    <div class="table-responsive">
+        <table class="table align-middle bg-white rounded">
+            <thead>
+                <tr>
+                    <th>Piano / N.</th>
+                    <th>Tipologia</th>
+                    <th>Capienza</th>
+                    <th>Prezzo base</th>
+                    <th>Stato</th>
+                    <th>Attiva</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for camera in camere %}
+                <tr>
+                    <td>{{ camera.piano }} / {{ camera.numerocamera }}</td>
+                    <td>{{ camera.tipologia|capfirst }}</td>
+                    <td>{{ camera.numeromassimoospiti }}</td>
+                    <td>{{ camera.prezzobasenotte }} €</td>
+                    <td>{{ camera.stato|capfirst }}</td>
+                    <td>
+                    {% if camera.attivo %}
+                        <span class="badge text-bg-success">Sì</span>
+                    {% else %}
+                        <span class="badge text-bg-secondary">No</span>
+                    {% endif %}
+                    </td>
+                    <td class="text-end">
+                        <a class="btn btn-sm btn-outline-secondary" href="{% url 'modifica_camera' piano=camera.piano numero_camera=camera.numerocamera %}">
+                            Modifica
+                        </a>
+                    {% if camera.attivo %}
+                        <form method="post" action="{% url 'elimina_camera' piano=camera.piano numero_camera=camera.numerocamera %}" class="d-inline">
+                        {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Disattivare questa camera?');">
+                                Disattiva
+                            </button>
+                        </form>
+                    {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% else %}
+    <p class="text-muted">Nessuna camera registrata.</p>
+{% endif %}
+
+{% endblock %}
