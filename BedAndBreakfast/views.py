@@ -400,6 +400,10 @@ def aggiungi_camera(request):
 def elimina_camera(request, piano, numero_camera):
     """A1.2 - Disattiva una camera (soft delete tramite 'attivo': si veda la nota su
     PROTECT/storico discussa per la relazione con Prenotazione e Pulizia)."""
+
+    if request.method != 'POST':
+        return redirect('gestione_camere')
+
     camera = get_object_or_404(Camera, piano=piano, numerocamera=numero_camera)
     camera.attivo = False
     camera.save()
@@ -459,6 +463,10 @@ def aggiungi_personale(request):
 @personale_richiesto('amministratore')
 def elimina_personale(request, documento_identita):
     """A2.2 - Disattiva un membro del personale (soft delete tramite 'attivo')."""
+
+    if request.method != 'POST':
+        return redirect('gestione_personale')
+
     persona = get_object_or_404(Personale, documentoidentita=documento_identita)
     persona.attivo = False
     persona.save()
@@ -500,6 +508,10 @@ def aggiungi_servizio(request):
 @personale_richiesto('amministratore')
 def elimina_servizio(request, nome):
     """A3.2 - Disattiva un servizio aggiuntivo (soft delete tramite 'attivo')."""
+
+    if request.method != 'POST':
+        return redirect('gestione_servizi')
+
     servizio = get_object_or_404(ServizioAggiuntivo, nome=nome)
     servizio.attivo = False
     servizio.save()
@@ -603,6 +615,7 @@ def fatturato_mensile(request):
 
     return render(request, 'admin/fatturato_mensile.html', {
         'fatturato': fatturato_per_tipologia,
+        'totale': sum(fatturato_per_tipologia.values()),
         'anno': anno,
         'mese': mese,
     })
@@ -688,7 +701,10 @@ def servizi_sotto_soglia(request):
             if totale < soglia:
                 risultati[servizio.nome] = totale
 
-    return render(request, 'admin/servizi_sotto_soglia.html', {'risultati': risultati})
+    return render(request, 'admin/servizi_sotto_soglia.html', {
+        'risultati': risultati, 
+        'stagioni': Stagione.objects.all().order_by('datainizio'),
+    })
 
 
 # ---------------------------------------------------------------------------
