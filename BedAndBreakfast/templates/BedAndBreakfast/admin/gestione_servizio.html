@@ -6,7 +6,7 @@
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h2 class="mb-0">Servizi aggiuntivi</h2>
-    <a href="{% url 'aggiungi_servizio' %}" class="btn btn-clay">+ Aggiungi servizio</a>
+    <a href="{% url 'BedAndBreakfast:aggiungi_servizio' %}" class="btn btn-clay">+ Aggiungi servizio</a>
 </div>
 
 {% if servizi %}
@@ -35,7 +35,7 @@
                     {% endif %}
                     </td>
                     <td class="text-end">
-                        <a class="btn btn-sm btn-outline-secondary" href="{% url 'modifica_servizio' nome=servizio.nome %}">
+                        <a class="btn btn-sm btn-outline-secondary" href="{% url 'BedAndBreakfast:modifica_servizio' nome=servizio.nome %}">
                             Modifica
                         </a>
                     {% if servizio.attivo %}

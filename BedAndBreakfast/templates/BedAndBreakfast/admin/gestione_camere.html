@@ -6,7 +6,7 @@
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h2 class="mb-0">Camere</h2>
-    <a href="{% url 'aggiungi_camera' %}" class="btn btn-clay">+ Aggiungi camera</a>
+    <a href="{% url 'BedAndBreakfast:aggiungi_camera' %}" class="btn btn-clay">+ Aggiungi camera</a>
 </div>
 
 {% if camere %}
@@ -39,7 +39,7 @@
                     {% endif %}
                     </td>
                     <td class="text-end">
-                        <a class="btn btn-sm btn-outline-secondary" href="{% url 'modifica_camera' piano=camera.piano numero_camera=camera.numerocamera %}">
+                        <a class="btn btn-sm btn-outline-secondary" href="{% url 'BedAndBreakfast:modifica_camera' piano=camera.piano numero_camera=camera.numerocamera %}">
                             Modifica
                         </a>
                     {% if camera.attivo %}
