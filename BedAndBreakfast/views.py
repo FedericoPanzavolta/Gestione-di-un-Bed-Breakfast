@@ -1,4 +1,3 @@
-
 from datetime import date
 
 from django.contrib import messages
@@ -23,29 +22,30 @@ from .models import (
 
 
 # ---------------------------------------------------------------------------
-# Decoratori di accesso (basati sulla sessione, si veda nota in cima al file)
+# Controlli di accesso (basati sulla sessione).
+#
+# Ciascuna funzione ritorna True se l'accesso è consentito, False altrimenti;
+# la view, se ritorna False, deve fare il redirect.
 # ---------------------------------------------------------------------------
 
-def ospite_richiesto(view_func):
-    def wrapper(request, *args, **kwargs):
-        if not request.session.get('ospite_pk'):
-            messages.error(request, "Devi effettuare il login come ospite.")
-            return redirect('login')
-        return view_func(request, *args, **kwargs)
-    return wrapper
+def ospite_loggato(request):
+    """True se un ospite ha effettuato il login, False altrimenti"""
+    if not request.session.get('ospite_pk'):
+        messages.error(request, "Devi effettuare il login come ospite.")
+        return False
+    return True
 
 
-def personale_richiesto(*ruoli_ammessi):
-    """Decoratore parametrico: personale_richiesto('receptionist', 'amministratore')."""
-    def decorator(view_func):
-        def wrapper(request, *args, **kwargs):
-            ruolo = request.session.get('ruolo_personale')
-            if not ruolo or (ruoli_ammessi and ruolo not in ruoli_ammessi):
-                messages.error(request, "Accesso non autorizzato.")
-                return redirect('login')
-            return view_func(request, *args, **kwargs)
-        return wrapper
-    return decorator
+def personale_autorizzato(request, *ruoli_ammessi):
+    """True se il personale collegato ha uno dei ruoli ammessi.
+    Se ruoli_ammessi è vuoto, è sufficiente essere un membro del personale
+    loggato, di qualunque ruolo: personale_autorizzato(request).
+    """
+    ruolo = request.session.get('ruolo_personale')
+    if not ruolo or (ruoli_ammessi and ruolo not in ruoli_ammessi):
+        messages.error(request, "Accesso non autorizzato.")
+        return False
+    return True
 
 
 # ---------------------------------------------------------------------------
@@ -118,9 +118,11 @@ def verifica_disponibilita(request):
     })
 
 
-@ospite_richiesto
 def effettua_prenotazione(request, piano, numero_camera):
     """O3 - Crea una prenotazione (con eventuali servizi aggiuntivi) per la camera indicata."""
+    if not ospite_loggato(request):
+        return redirect('login')
+
     camera = get_object_or_404(Camera, piano=piano, numerocamera=numero_camera, attivo=True)
 
     if request.method == 'POST':
@@ -177,9 +179,11 @@ def effettua_prenotazione(request, piano, numero_camera):
     })
 
 
-@ospite_richiesto
 def cancella_prenotazione(request, codice_prenotazione):
     """O4 - Cancella una prenotazione attiva, solo se il check-in non è ancora avvenuto."""
+    if not ospite_loggato(request):
+        return redirect('login')
+
     prenotazione = get_object_or_404(
         Prenotazione,
         codiceprenotazione=codice_prenotazione,
@@ -197,9 +201,11 @@ def cancella_prenotazione(request, codice_prenotazione):
     return redirect('le_mie_prenotazioni')
 
 
-@ospite_richiesto
 def le_mie_prenotazioni(request):
     """O5 - Elenca le prenotazioni effettuate dall'ospite loggato."""
+    if not ospite_loggato(request):
+        return redirect('login')
+
     prenotazioni = Prenotazione.objects.filter(
         documentoidentitaospite_id=request.session['ospite_pk'],
     ).order_by('-dataarrivo')
@@ -209,9 +215,11 @@ def le_mie_prenotazioni(request):
     })
 
 
-@ospite_richiesto
 def lascia_recensione(request, codice_prenotazione):
     """O6 - Lascia una recensione per un soggiorno completato (al più una per prenotazione)."""
+    if not ospite_loggato(request):
+        return redirect('login')
+
     prenotazione = get_object_or_404(
         Prenotazione,
         codiceprenotazione=codice_prenotazione,
@@ -243,9 +251,11 @@ def lascia_recensione(request, codice_prenotazione):
 # RECEPTIONIST — R1-R5
 # ---------------------------------------------------------------------------
 
-@personale_richiesto('receptionist')
 def check_in(request, codice_prenotazione):
     """R1 - Registra l'arrivo dell'ospite: la camera passa a 'occupata'."""
+    if not personale_autorizzato(request, 'receptionist'):
+        return redirect('login')
+
     prenotazione = get_object_or_404(Prenotazione, codiceprenotazione=codice_prenotazione, stato='attiva')
 
     if prenotazione.datacheckineffettivo is not None:
@@ -279,9 +289,11 @@ def check_in(request, codice_prenotazione):
     return render(request, 'receptionist/check_in.html', {'prenotazione': prenotazione})
 
 
-@personale_richiesto('receptionist')
 def check_out(request, codice_prenotazione):
     """R2/R3 - Registra la partenza, genera il pagamento, la camera passa a 'da pulire'."""
+    if not personale_autorizzato(request, 'receptionist'):
+        return redirect('login')
+
     prenotazione = get_object_or_404(Prenotazione, codiceprenotazione=codice_prenotazione, stato='attiva')
 
     if prenotazione.datacheckineffettivo is None:
@@ -323,9 +335,11 @@ def check_out(request, codice_prenotazione):
     return render(request, 'receptionist/check_out.html', {'prenotazione': prenotazione})
 
 
-@personale_richiesto('receptionist')
 def arrivi_partenze(request):
     """R4 - Mostra gli arrivi e le partenze previsti per una data (default: oggi)."""
+    if not personale_autorizzato(request, 'receptionist'):
+        return redirect('login')
+
     data_selezionata = request.GET.get('data') or timezone.now().date().isoformat()
 
     arrivi = Prenotazione.objects.filter(dataarrivo=data_selezionata, stato='attiva')
@@ -340,9 +354,11 @@ def arrivi_partenze(request):
 
 # R5 (receptionist) e P1 (addetto pulizie) condividono la stessa vista:
 # entrambi i ruoli possono consultare la lista delle camere da pulire.
-@personale_richiesto('receptionist', 'addetto_pulizie')
 def lista_camere_da_pulire(request):
     """R5 / P1 - Elenca le camere nello stato 'da pulire'."""
+    if not personale_autorizzato(request, 'receptionist', 'addetto_pulizie'):
+        return redirect('login')
+
     camere = Camera.objects.filter(stato='da pulire')
     return render(request, 'pulizie/lista_camere_da_pulire.html', {'camere': camere})
 
@@ -351,9 +367,11 @@ def lista_camere_da_pulire(request):
 # ADDETTO PULIZIE — P2 (P1 è sopra, condivisa con R5)
 # ---------------------------------------------------------------------------
 
-@personale_richiesto('addetto_pulizie')
 def camera_pulita(request, piano, numero_camera):
     """P2 - Segna una camera come pulita: la camera torna 'disponibile'."""
+    if not personale_autorizzato(request, 'addetto_pulizie'):
+        return redirect('login')
+
     camera = get_object_or_404(Camera, piano=piano, numerocamera=numero_camera, stato='da pulire')
 
     with transaction.atomic():
@@ -376,9 +394,11 @@ def camera_pulita(request, piano, numero_camera):
 # AMMINISTRATORE — A1-A9
 # ---------------------------------------------------------------------------
 
-@personale_richiesto('amministratore')
 def aggiungi_camera(request):
     """A1.1 - Aggiunge una nuova camera."""
+    if not personale_autorizzato(request, 'amministratore'):
+        return redirect('login')
+
     if request.method == 'POST':
         Camera.objects.create(
             piano=request.POST.get('piano'),
@@ -396,10 +416,11 @@ def aggiungi_camera(request):
     return render(request, 'admin/aggiungi_camera.html')
 
 
-@personale_richiesto('amministratore')
 def elimina_camera(request, piano, numero_camera):
     """A1.2 - Disattiva una camera (soft delete tramite 'attivo': si veda la nota su
     PROTECT/storico discussa per la relazione con Prenotazione e Pulizia)."""
+    if not personale_autorizzato(request, 'amministratore'):
+        return redirect('login')
 
     if request.method != 'POST':
         return redirect('gestione_camere')
@@ -411,9 +432,11 @@ def elimina_camera(request, piano, numero_camera):
     return redirect('gestione_camere')
 
 
-@personale_richiesto('amministratore')
 def modifica_camera(request, piano, numero_camera):
     """A1.3 - Modifica i dettagli di una camera."""
+    if not personale_autorizzato(request, 'amministratore'):
+        return redirect('login')
+
     camera = get_object_or_404(Camera, piano=piano, numerocamera=numero_camera)
 
     if request.method == 'POST':
@@ -428,9 +451,11 @@ def modifica_camera(request, piano, numero_camera):
     return render(request, 'admin/modifica_camera.html', {'camera': camera})
 
 
-@personale_richiesto('amministratore')
 def aggiungi_personale(request):
     """A2.1 - Aggiunge un nuovo membro del personale."""
+    if not personale_autorizzato(request, 'amministratore'):
+        return redirect('login')
+
     if request.method == 'POST':
         e_mail = request.POST.get('e_mail')
         documento_identita = request.POST.get('documento_identita')
@@ -445,7 +470,7 @@ def aggiungi_personale(request):
             return render(request, 'admin/aggiungi_personale.html')
 
         Personale.objects.create(
-            documentoidentita=request.POST.get('documento_identita'),
+            documentoidentita=documento_identita,
             nome=request.POST.get('nome'),
             cognome=request.POST.get('cognome'),
             telefono=request.POST.get('telefono'),
@@ -460,9 +485,10 @@ def aggiungi_personale(request):
     return render(request, 'admin/aggiungi_personale.html')
 
 
-@personale_richiesto('amministratore')
 def elimina_personale(request, documento_identita):
     """A2.2 - Disattiva un membro del personale (soft delete tramite 'attivo')."""
+    if not personale_autorizzato(request, 'amministratore'):
+        return redirect('login')
 
     if request.method != 'POST':
         return redirect('gestione_personale')
@@ -474,9 +500,11 @@ def elimina_personale(request, documento_identita):
     return redirect('gestione_personale')
 
 
-@personale_richiesto('amministratore')
 def modifica_personale(request, documento_identita):
     """A2.3 - Modifica i dati (es. contatti/ruolo) di un membro del personale."""
+    if not personale_autorizzato(request, 'amministratore'):
+        return redirect('login')
+
     persona = get_object_or_404(Personale, documentoidentita=documento_identita)
 
     if request.method == 'POST':
@@ -489,9 +517,11 @@ def modifica_personale(request, documento_identita):
     return render(request, 'admin/modifica_personale.html', {'persona': persona})
 
 
-@personale_richiesto('amministratore')
 def aggiungi_servizio(request):
     """A3.1 - Aggiunge un nuovo servizio aggiuntivo."""
+    if not personale_autorizzato(request, 'amministratore'):
+        return redirect('login')
+
     if request.method == 'POST':
         ServizioAggiuntivo.objects.create(
             nome=request.POST.get('nome'),
@@ -505,9 +535,10 @@ def aggiungi_servizio(request):
     return render(request, 'admin/aggiungi_servizio.html')
 
 
-@personale_richiesto('amministratore')
 def elimina_servizio(request, nome):
     """A3.2 - Disattiva un servizio aggiuntivo (soft delete tramite 'attivo')."""
+    if not personale_autorizzato(request, 'amministratore'):
+        return redirect('login')
 
     if request.method != 'POST':
         return redirect('gestione_servizi')
@@ -519,9 +550,11 @@ def elimina_servizio(request, nome):
     return redirect('gestione_servizi')
 
 
-@personale_richiesto('amministratore')
 def modifica_servizio(request, nome):
     """A3.3 - Modifica descrizione/costo di un servizio aggiuntivo."""
+    if not personale_autorizzato(request, 'amministratore'):
+        return redirect('login')
+
     servizio = get_object_or_404(ServizioAggiuntivo, nome=nome)
 
     if request.method == 'POST':
@@ -534,10 +567,12 @@ def modifica_servizio(request, nome):
     return render(request, 'admin/modifica_servizio.html', {'servizio': servizio})
 
 
-@personale_richiesto('amministratore')
 def aggiungi_stagione(request):
     """A4 - Definisce un nuovo periodo stagionale (nessuna modifica/eliminazione prevista,
     coerentemente con l'Ambiguità 9: ogni stagione è definita una tantum)."""
+    if not personale_autorizzato(request, 'amministratore'):
+        return redirect('login')
+
     if request.method == 'POST':
         data_inizio = request.POST.get('data_inizio')
         data_fine = request.POST.get('data_fine')
@@ -562,9 +597,11 @@ def aggiungi_stagione(request):
     return render(request, 'admin/aggiungi_stagione.html')
 
 
-@personale_richiesto('amministratore')
 def tasso_occupazione(request):
     """A5 - Tasso di occupazione di ogni camera in un intervallo di date."""
+    if not personale_autorizzato(request, 'amministratore'):
+        return redirect('login')
+
     risultati = None
     data_inizio = request.GET.get('data_inizio')
     data_fine = request.GET.get('data_fine')
@@ -595,9 +632,11 @@ def tasso_occupazione(request):
     return render(request, 'admin/tasso_occupazione.html', {'risultati': risultati})
 
 
-@personale_richiesto('amministratore')
 def fatturato_mensile(request):
     """A6 - Fatturato totale di un mese, suddiviso per tipologia di camera."""
+    if not personale_autorizzato(request, 'amministratore'):
+        return redirect('login')
+
     anno = int(request.GET.get('anno', timezone.now().year))
     mese = int(request.GET.get('mese', timezone.now().month))
 
@@ -621,9 +660,11 @@ def fatturato_mensile(request):
     })
 
 
-@personale_richiesto('amministratore')
 def servizi_piu_richiesti(request):
     """A7 - I 3 servizi aggiuntivi più richiesti in un dato periodo."""
+    if not personale_autorizzato(request, 'amministratore'):
+        return redirect('login')
+
     risultati = None
     data_inizio = request.GET.get('data_inizio')
     data_fine = request.GET.get('data_fine')
@@ -643,9 +684,11 @@ def servizi_piu_richiesti(request):
     return render(request, 'admin/servizi_piu_richiesti.html', {'risultati': risultati})
 
 
-@personale_richiesto('amministratore')
 def recensioni_estreme(request):
     """A8 - Per ogni tipologia di camera, la camera con media recensioni più alta e più bassa."""
+    if not personale_autorizzato(request, 'amministratore'):
+        return redirect('login')
+
     medie_per_camera = (
         Recensione.objects
         .values('codiceprenotazione__piano', 'codiceprenotazione__numerocamera')
@@ -673,13 +716,15 @@ def recensioni_estreme(request):
     return render(request, 'admin/recensioni_estreme.html', {'estremi': estremi_per_tipologia})
 
 
-@personale_richiesto('amministratore')
 def servizi_sotto_soglia(request):
     """A9 - Servizi aggiuntivi il cui fatturato in una data stagione non supera una soglia.
 
     Si controllano TUTTI i servizi (non solo quelli con almeno una richiesta),
     così da individuare anche quelli con fatturato pari a zero nella stagione.
     """
+    if not personale_autorizzato(request, 'amministratore'):
+        return redirect('login')
+
     risultati = None
     data_inizio_stagione = request.GET.get('stagione')  # PK di Stagione = dataInizio
     soglia = request.GET.get('soglia')
@@ -697,7 +742,7 @@ def servizi_sotto_soglia(request):
                 risultati[servizio.nome] = totale
 
     return render(request, 'admin/servizi_sotto_soglia.html', {
-        'risultati': risultati, 
+        'risultati': risultati,
         'stagioni': Stagione.objects.all().order_by('datainizio'),
     })
 
@@ -706,35 +751,44 @@ def servizi_sotto_soglia(request):
 # Views di gestione per l'amministratore
 # ---------------------------------------------------------------------------
 
-@personale_richiesto('amministratore')
 def gestione_camere(request):
     """Elenco di tutte le camere, con accesso alle azioni di modifica/disattivazione."""
+    if not personale_autorizzato(request, 'amministratore'):
+        return redirect('login')
+
     camere = Camera.objects.all().order_by('piano', 'numerocamera')
     return render(request, 'admin/gestione_camere.html', {'camere': camere})
 
 
-@personale_richiesto('amministratore')
 def gestione_personale(request):
     """Elenco di tutto il personale, con accesso alle azioni di modifica/disattivazione."""
+    if not personale_autorizzato(request, 'amministratore'):
+        return redirect('login')
+
     personale = Personale.objects.all().order_by('cognome', 'nome')
     return render(request, 'admin/gestione_personale.html', {'personale': personale})
 
 
-@personale_richiesto('amministratore')
 def gestione_servizi(request):
     """Elenco di tutti i servizi aggiuntivi, con accesso alle azioni di modifica/disattivazione."""
+    if not personale_autorizzato(request, 'amministratore'):
+        return redirect('login')
+
     servizi = ServizioAggiuntivo.objects.all().order_by('nome')
     return render(request, 'admin/gestione_servizi.html', {'servizi': servizi})
 
 
-@personale_richiesto('amministratore')
 def gestione_stagioni(request):
     """Elenco delle stagioni definite (nessuna modifica/eliminazione prevista, Ambiguità 9)."""
+    if not personale_autorizzato(request, 'amministratore'):
+        return redirect('login')
+
     stagioni = Stagione.objects.all().order_by('datainizio')
     return render(request, 'admin/gestione_stagioni.html', {'stagioni': stagioni})
 
+
 # ---------------------------------------------------------------------------
-# Login / logout minimali (necessari per popolare la sessione usata sopra)
+# Login / logout (necessari per popolare la sessione usata sopra)
 # ---------------------------------------------------------------------------
 
 def login_view(request):
