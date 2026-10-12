@@ -148,7 +148,7 @@ class ServizioAggiuntivo(models.Model):
 
 
 class Stagione(models.Model):
-    nome = models.CharField(max_length=20)
+    nome = models.CharField(max_length=40)
     moltiplicatore = models.DecimalField(max_digits=3, decimal_places=2)
     datainizio = models.DateField(db_column='dataInizio', primary_key=True)  # Field name made lowercase.
     datafine = models.DateField(db_column='dataFine')  # Field name made lowercase.
