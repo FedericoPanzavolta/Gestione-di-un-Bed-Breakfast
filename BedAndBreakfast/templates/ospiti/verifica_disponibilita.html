@@ -36,7 +36,7 @@
                 <p class="text-muted small mb-2">Fino a {{ camera.numeromassimoospiti }} ospiti</p>
                 <p class="mb-3">{{ camera.descrizione }}</p>
                 <p class="fw-semibold mb-3">{{ camera.prezzobasenotte }} € / notte</p>
-                <a class="btn btn-clay mt-auto" href="{% url 'effettua_prenotazione' piano=camera.piano numero_camera=camera.numerocamera %}?data_arrivo={{ request.GET.data_arrivo }}&data_partenza={{ request.GET.data_partenza }}&numero_ospiti={{ request.GET.numero_ospiti }}">
+                <a class="btn btn-clay mt-auto" href="{% url 'BedAndBreakfast:effettua_prenotazione' piano=camera.piano numero_camera=camera.numerocamera %}?data_arrivo={{ request.GET.data_arrivo }}&data_partenza={{ request.GET.data_partenza }}&numero_ospiti={{ request.GET.numero_ospiti }}">
                     Prenota
                 </a>
             </div>

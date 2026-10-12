@@ -1,13 +1,13 @@
 {% extends 'base.html' %}
 
-{% block title %}Locanda del Colle — Bed &amp; Breakfast{% endblock %}
+{% block title %}Locanda del Colle — Bed e Breakfast{% endblock %}
 
 {% block content %}
 
 <div class="p-5 mb-5 rounded" style="background-color: var(--pine); color: var(--sand);">
         <h1 class="display-5 mb-3">Benvenuti alla Locanda del Colle</h1>
     <p class="lead mb-4" style="max-width: 40rem;">
-    Un piccolo bed &amp; breakfast a conduzione familiare, tra colline e silenzio.
+    Un piccolo bed e breakfast a conduzione familiare, tra colline e silenzio.
     Gestisci qui le tue prenotazioni, o scopri le camere disponibili.
     </p>
 
@@ -20,11 +20,20 @@
     {% else %}
     {# personale loggato: rimando alla prima azione utile per il suo ruolo #}
     {% if request.session.ruolo_personale == 'receptionist' %}
-        <a href="{% url 'BedAndBreakfast:arrivi_partenze' %}" class="btn btn-clay btn-lg">Arrivi &amp; partenze di oggi</a>
+        <a href="{% url 'BedAndBreakfast:arrivi_partenze' %}" class="btn btn-clay btn-lg">Arrivi e partenze di oggi</a>
     {% elif request.session.ruolo_personale == 'addetto_pulizie' %}
         <a href="{% url 'BedAndBreakfast:lista_camere_da_pulire' %}" class="btn btn-clay btn-lg">Camere da pulire</a>
     {% elif request.session.ruolo_personale == 'amministratore' %}
-        <a href="{% url 'BedAndBreakfast:tasso_occupazione' %}" class="btn btn-clay btn-lg">Vai alle statistiche</a>
+        <a class="nav-link dropdown-toggle btn btn-clay" href="#" role="button" data-bs-toggle="dropdown" style="width:15%">
+            Statistiche
+        </a>
+        <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="{% url 'BedAndBreakfast:tasso_occupazione' %}">Tasso di occupazione</a></li>
+            <li><a class="dropdown-item" href="{% url 'BedAndBreakfast:fatturato_mensile' %}">Fatturato mensile</a></li>
+            <li><a class="dropdown-item" href="{% url 'BedAndBreakfast:servizi_piu_richiesti' %}">Servizi più richiesti</a></li>
+            <li><a class="dropdown-item" href="{% url 'BedAndBreakfast:recensioni_estreme' %}">Recensioni estreme</a></li>
+            <li><a class="dropdown-item" href="{% url 'BedAndBreakfast:servizi_sotto_soglia' %}">Servizi sotto soglia</a></li>
+        </ul>
     {% endif %}
 {% endif %}
 </div>

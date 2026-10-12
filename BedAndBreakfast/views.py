@@ -82,7 +82,7 @@ def registrazione_ospite(request):
             password=password,
         )
         messages.success(request, "Registrazione completata: ora puoi accedere.")
-        return redirect('login')
+        return redirect('BedAndBreakfast:login')
 
     return render(request, 'ospiti/registrazione.html')
 
@@ -121,7 +121,7 @@ def verifica_disponibilita(request):
 def effettua_prenotazione(request, piano, numero_camera):
     """O3 - Crea una prenotazione (con eventuali servizi aggiuntivi) per la camera indicata."""
     if not ospite_loggato(request):
-        return redirect('login')
+        return redirect('BedAndBreakfast:login')
 
     camera = get_object_or_404(Camera, piano=piano, numerocamera=numero_camera, attivo=True)
 
@@ -134,7 +134,7 @@ def effettua_prenotazione(request, piano, numero_camera):
         # Ambiguità 8: capienza della camera
         if numero_ospiti > camera.numeromassimoospiti:
             messages.error(request, "Il numero di ospiti supera la capienza della camera.")
-            return redirect('effettua_prenotazione', piano=piano, numero_camera=numero_camera)
+            return redirect('BedAndBreakfast:effettua_prenotazione', piano=piano, numero_camera=numero_camera)
 
         # Ambiguità 6: nessuna sovrapposizione con prenotazioni attive
         sovrapposta = Prenotazione.objects.filter(
@@ -143,7 +143,7 @@ def effettua_prenotazione(request, piano, numero_camera):
         ).exists()
         if sovrapposta:
             messages.error(request, "La camera non è più disponibile per queste date.")
-            return redirect('verifica_disponibilita')
+            return redirect('BedAndBreakfast:verifica_disponibilita')
 
         # Ambiguità 2/9: la stagione applicabile è quella in cui ricade
         # la data di arrivo (se nessuna la copre, si applica il prezzo base).
@@ -170,7 +170,7 @@ def effettua_prenotazione(request, piano, numero_camera):
                 )
 
         messages.success(request, "Prenotazione effettuata con successo.")
-        return redirect('le_mie_prenotazioni')
+        return redirect('BedAndBreakfast:le_mie_prenotazioni')
 
     servizi = ServizioAggiuntivo.objects.filter(attivo=True)
     return render(request, 'ospiti/effettua_prenotazione.html', {
@@ -182,7 +182,7 @@ def effettua_prenotazione(request, piano, numero_camera):
 def cancella_prenotazione(request, codice_prenotazione):
     """O4 - Cancella una prenotazione attiva, solo se il check-in non è ancora avvenuto."""
     if not ospite_loggato(request):
-        return redirect('login')
+        return redirect('BedAndBreakfast:login')
 
     prenotazione = get_object_or_404(
         Prenotazione,
@@ -198,13 +198,13 @@ def cancella_prenotazione(request, codice_prenotazione):
         prenotazione.save()
         messages.success(request, "Prenotazione cancellata.")
 
-    return redirect('le_mie_prenotazioni')
+    return redirect('BedAndBreakfast:le_mie_prenotazioni')
 
 
 def le_mie_prenotazioni(request):
     """O5 - Elenca le prenotazioni effettuate dall'ospite loggato."""
     if not ospite_loggato(request):
-        return redirect('login')
+        return redirect('BedAndBreakfast:login')
 
     prenotazioni = Prenotazione.objects.filter(
         documentoidentitaospite_id=request.session['ospite_pk'],
@@ -218,7 +218,7 @@ def le_mie_prenotazioni(request):
 def lascia_recensione(request, codice_prenotazione):
     """O6 - Lascia una recensione per un soggiorno completato (al più una per prenotazione)."""
     if not ospite_loggato(request):
-        return redirect('login')
+        return redirect('BedAndBreakfast:login')
 
     prenotazione = get_object_or_404(
         Prenotazione,
@@ -229,7 +229,7 @@ def lascia_recensione(request, codice_prenotazione):
 
     if Recensione.objects.filter(codiceprenotazione=prenotazione).exists():
         messages.error(request, "Hai già lasciato una recensione per questo soggiorno.")
-        return redirect('le_mie_prenotazioni')
+        return redirect('BedAndBreakfast:le_mie_prenotazioni')
 
     if request.method == 'POST':
         voto = int(request.POST.get('voto'))
@@ -242,7 +242,7 @@ def lascia_recensione(request, codice_prenotazione):
             data=timezone.now().date(),
         )
         messages.success(request, "Recensione inviata, grazie!")
-        return redirect('le_mie_prenotazioni')
+        return redirect('BedAndBreakfast:le_mie_prenotazioni')
 
     return render(request, 'ospiti/lascia_recensione.html', {'prenotazione': prenotazione})
 
@@ -254,13 +254,13 @@ def lascia_recensione(request, codice_prenotazione):
 def check_in(request, codice_prenotazione):
     """R1 - Registra l'arrivo dell'ospite: la camera passa a 'occupata'."""
     if not personale_autorizzato(request, 'receptionist'):
-        return redirect('login')
+        return redirect('BedAndBreakfast:login')
 
     prenotazione = get_object_or_404(Prenotazione, codiceprenotazione=codice_prenotazione, stato='attiva')
 
     if prenotazione.datacheckineffettivo is not None:
         messages.error(request, "Check-in già registrato per questa prenotazione.")
-        return redirect('arrivi_partenze')
+        return redirect('BedAndBreakfast:arrivi_partenze')
 
     if request.method == 'POST':
         with transaction.atomic():
@@ -284,7 +284,7 @@ def check_in(request, codice_prenotazione):
                     )
 
         messages.success(request, "Check-in registrato.")
-        return redirect('arrivi_partenze')
+        return redirect('BedAndBreakfast:arrivi_partenze')
 
     return render(request, 'receptionist/check_in.html', {'prenotazione': prenotazione})
 
@@ -292,13 +292,13 @@ def check_in(request, codice_prenotazione):
 def check_out(request, codice_prenotazione):
     """R2/R3 - Registra la partenza, genera il pagamento, la camera passa a 'da pulire'."""
     if not personale_autorizzato(request, 'receptionist'):
-        return redirect('login')
+        return redirect('BedAndBreakfast:login')
 
     prenotazione = get_object_or_404(Prenotazione, codiceprenotazione=codice_prenotazione, stato='attiva')
 
     if prenotazione.datacheckineffettivo is None:
         messages.error(request, "Impossibile effettuare il check-out: check-in non ancora registrato.")
-        return redirect('arrivi_partenze')
+        return redirect('BedAndBreakfast:arrivi_partenze')
 
     if request.method == 'POST':
         metodo = request.POST.get('metodo')  # 'contanti' | 'carta' | 'bonifico'
@@ -330,7 +330,7 @@ def check_out(request, codice_prenotazione):
             camera.save()
 
         messages.success(request, f"Check-out registrato. Totale addebitato: {importo_totale} €.")
-        return redirect('arrivi_partenze')
+        return redirect('BedAndBreakfast:arrivi_partenze')
 
     return render(request, 'receptionist/check_out.html', {'prenotazione': prenotazione})
 
@@ -338,7 +338,7 @@ def check_out(request, codice_prenotazione):
 def arrivi_partenze(request):
     """R4 - Mostra gli arrivi e le partenze previsti per una data (default: oggi)."""
     if not personale_autorizzato(request, 'receptionist'):
-        return redirect('login')
+        return redirect('BedAndBreakfast:login')
 
     data_selezionata = request.GET.get('data') or timezone.now().date().isoformat()
 
@@ -357,7 +357,7 @@ def arrivi_partenze(request):
 def lista_camere_da_pulire(request):
     """R5 / P1 - Elenca le camere nello stato 'da pulire'."""
     if not personale_autorizzato(request, 'receptionist', 'addetto_pulizie'):
-        return redirect('login')
+        return redirect('BedAndBreakfast:login')
 
     camere = Camera.objects.filter(stato='da pulire')
     return render(request, 'pulizie/lista_camere_da_pulire.html', {'camere': camere})
@@ -370,7 +370,7 @@ def lista_camere_da_pulire(request):
 def camera_pulita(request, piano, numero_camera):
     """P2 - Segna una camera come pulita: la camera torna 'disponibile'."""
     if not personale_autorizzato(request, 'addetto_pulizie'):
-        return redirect('login')
+        return redirect('BedAndBreakfast:login')
 
     camera = get_object_or_404(Camera, piano=piano, numerocamera=numero_camera, stato='da pulire')
 
@@ -387,7 +387,7 @@ def camera_pulita(request, piano, numero_camera):
         camera.save()
 
     messages.success(request, "Camera segnata come pulita.")
-    return redirect('lista_camere_da_pulire')
+    return redirect('BedAndBreakfast:lista_camere_da_pulire')
 
 
 # ---------------------------------------------------------------------------
@@ -397,7 +397,7 @@ def camera_pulita(request, piano, numero_camera):
 def aggiungi_camera(request):
     """A1.1 - Aggiunge una nuova camera."""
     if not personale_autorizzato(request, 'amministratore'):
-        return redirect('login')
+        return redirect('BedAndBreakfast:login')
 
     if request.method == 'POST':
         Camera.objects.create(
@@ -411,7 +411,7 @@ def aggiungi_camera(request):
             attivo=True,
         )
         messages.success(request, "Camera aggiunta.")
-        return redirect('gestione_camere')
+        return redirect('BedAndBreakfast:gestione_camere')
 
     return render(request, 'admin/aggiungi_camera.html')
 
@@ -420,22 +420,22 @@ def elimina_camera(request, piano, numero_camera):
     """A1.2 - Disattiva una camera (soft delete tramite 'attivo': si veda la nota su
     PROTECT/storico discussa per la relazione con Prenotazione e Pulizia)."""
     if not personale_autorizzato(request, 'amministratore'):
-        return redirect('login')
+        return redirect('BedAndBreakfast:login')
 
     if request.method != 'POST':
-        return redirect('gestione_camere')
+        return redirect('BedAndBreakfast:gestione_camere')
 
     camera = get_object_or_404(Camera, piano=piano, numerocamera=numero_camera)
     camera.attivo = False
     camera.save()
     messages.success(request, "Camera disattivata.")
-    return redirect('gestione_camere')
+    return redirect('BedAndBreakfast:gestione_camere')
 
 
 def modifica_camera(request, piano, numero_camera):
     """A1.3 - Modifica i dettagli di una camera."""
     if not personale_autorizzato(request, 'amministratore'):
-        return redirect('login')
+        return redirect('BedAndBreakfast:login')
 
     camera = get_object_or_404(Camera, piano=piano, numerocamera=numero_camera)
 
@@ -446,7 +446,7 @@ def modifica_camera(request, piano, numero_camera):
         camera.prezzobasenotte = request.POST.get('prezzo_base_notte')
         camera.save()
         messages.success(request, "Camera modificata.")
-        return redirect('gestione_camere')
+        return redirect('BedAndBreakfast:gestione_camere')
 
     return render(request, 'admin/modifica_camera.html', {'camera': camera})
 
@@ -454,7 +454,7 @@ def modifica_camera(request, piano, numero_camera):
 def aggiungi_personale(request):
     """A2.1 - Aggiunge un nuovo membro del personale."""
     if not personale_autorizzato(request, 'amministratore'):
-        return redirect('login')
+        return redirect('BedAndBreakfast:login')
 
     if request.method == 'POST':
         e_mail = request.POST.get('e_mail')
@@ -480,7 +480,7 @@ def aggiungi_personale(request):
             attivo=True,
         )
         messages.success(request, "Membro del personale aggiunto.")
-        return redirect('gestione_personale')
+        return redirect('BedAndBreakfast:gestione_personale')
 
     return render(request, 'admin/aggiungi_personale.html')
 
@@ -488,22 +488,22 @@ def aggiungi_personale(request):
 def elimina_personale(request, documento_identita):
     """A2.2 - Disattiva un membro del personale (soft delete tramite 'attivo')."""
     if not personale_autorizzato(request, 'amministratore'):
-        return redirect('login')
+        return redirect('BedAndBreakfast:login')
 
     if request.method != 'POST':
-        return redirect('gestione_personale')
+        return redirect('BedAndBreakfast:gestione_personale')
 
     persona = get_object_or_404(Personale, documentoidentita=documento_identita)
     persona.attivo = False
     persona.save()
     messages.success(request, "Membro del personale disattivato.")
-    return redirect('gestione_personale')
+    return redirect('BedAndBreakfast:gestione_personale')
 
 
 def modifica_personale(request, documento_identita):
     """A2.3 - Modifica i dati (es. contatti/ruolo) di un membro del personale."""
     if not personale_autorizzato(request, 'amministratore'):
-        return redirect('login')
+        return redirect('BedAndBreakfast:login')
 
     persona = get_object_or_404(Personale, documentoidentita=documento_identita)
 
@@ -512,7 +512,7 @@ def modifica_personale(request, documento_identita):
         persona.ruolo = request.POST.get('ruolo')
         persona.save()
         messages.success(request, "Dati aggiornati.")
-        return redirect('gestione_personale')
+        return redirect('BedAndBreakfast:gestione_personale')
 
     return render(request, 'admin/modifica_personale.html', {'persona': persona})
 
@@ -520,7 +520,7 @@ def modifica_personale(request, documento_identita):
 def aggiungi_servizio(request):
     """A3.1 - Aggiunge un nuovo servizio aggiuntivo."""
     if not personale_autorizzato(request, 'amministratore'):
-        return redirect('login')
+        return redirect('BedAndBreakfast:login')
 
     if request.method == 'POST':
         ServizioAggiuntivo.objects.create(
@@ -530,7 +530,7 @@ def aggiungi_servizio(request):
             attivo=True,
         )
         messages.success(request, "Servizio aggiunto.")
-        return redirect('gestione_servizi')
+        return redirect('BedAndBreakfast:gestione_servizi')
 
     return render(request, 'admin/aggiungi_servizio.html')
 
@@ -538,22 +538,22 @@ def aggiungi_servizio(request):
 def elimina_servizio(request, nome):
     """A3.2 - Disattiva un servizio aggiuntivo (soft delete tramite 'attivo')."""
     if not personale_autorizzato(request, 'amministratore'):
-        return redirect('login')
+        return redirect('BedAndBreakfast:login')
 
     if request.method != 'POST':
-        return redirect('gestione_servizi')
+        return redirect('BedAndBreakfast:gestione_servizi')
 
     servizio = get_object_or_404(ServizioAggiuntivo, nome=nome)
     servizio.attivo = False
     servizio.save()
     messages.success(request, "Servizio disattivato.")
-    return redirect('gestione_servizi')
+    return redirect('BedAndBreakfast:gestione_servizi')
 
 
 def modifica_servizio(request, nome):
     """A3.3 - Modifica descrizione/costo di un servizio aggiuntivo."""
     if not personale_autorizzato(request, 'amministratore'):
-        return redirect('login')
+        return redirect('BedAndBreakfast:login')
 
     servizio = get_object_or_404(ServizioAggiuntivo, nome=nome)
 
@@ -562,7 +562,7 @@ def modifica_servizio(request, nome):
         servizio.costo = request.POST.get('costo')
         servizio.save()
         messages.success(request, "Servizio modificato.")
-        return redirect('gestione_servizi')
+        return redirect('BedAndBreakfast:gestione_servizi')
 
     return render(request, 'admin/modifica_servizio.html', {'servizio': servizio})
 
@@ -571,7 +571,7 @@ def aggiungi_stagione(request):
     """A4 - Definisce un nuovo periodo stagionale (nessuna modifica/eliminazione prevista,
     coerentemente con l'Ambiguità 9: ogni stagione è definita una tantum)."""
     if not personale_autorizzato(request, 'amministratore'):
-        return redirect('login')
+        return redirect('BedAndBreakfast:login')
 
     if request.method == 'POST':
         data_inizio = request.POST.get('data_inizio')
@@ -592,7 +592,7 @@ def aggiungi_stagione(request):
             moltiplicatore=request.POST.get('moltiplicatore'),
         )
         messages.success(request, "Stagione aggiunta.")
-        return redirect('gestione_stagioni')
+        return redirect('BedAndBreakfast:gestione_stagioni')
 
     return render(request, 'admin/aggiungi_stagione.html')
 
@@ -600,7 +600,7 @@ def aggiungi_stagione(request):
 def tasso_occupazione(request):
     """A5 - Tasso di occupazione di ogni camera in un intervallo di date."""
     if not personale_autorizzato(request, 'amministratore'):
-        return redirect('login')
+        return redirect('BedAndBreakfast:login')
 
     risultati = None
     data_inizio = request.GET.get('data_inizio')
@@ -635,7 +635,7 @@ def tasso_occupazione(request):
 def fatturato_mensile(request):
     """A6 - Fatturato totale di un mese, suddiviso per tipologia di camera."""
     if not personale_autorizzato(request, 'amministratore'):
-        return redirect('login')
+        return redirect('BedAndBreakfast:login')
 
     anno = int(request.GET.get('anno', timezone.now().year))
     mese = int(request.GET.get('mese', timezone.now().month))
@@ -663,7 +663,7 @@ def fatturato_mensile(request):
 def servizi_piu_richiesti(request):
     """A7 - I 3 servizi aggiuntivi più richiesti in un dato periodo."""
     if not personale_autorizzato(request, 'amministratore'):
-        return redirect('login')
+        return redirect('BedAndBreakfast:login')
 
     risultati = None
     data_inizio = request.GET.get('data_inizio')
@@ -687,7 +687,7 @@ def servizi_piu_richiesti(request):
 def recensioni_estreme(request):
     """A8 - Per ogni tipologia di camera, la camera con media recensioni più alta e più bassa."""
     if not personale_autorizzato(request, 'amministratore'):
-        return redirect('login')
+        return redirect('BedAndBreakfast:login')
 
     medie_per_camera = (
         Recensione.objects
@@ -723,7 +723,7 @@ def servizi_sotto_soglia(request):
     così da individuare anche quelli con fatturato pari a zero nella stagione.
     """
     if not personale_autorizzato(request, 'amministratore'):
-        return redirect('login')
+        return redirect('BedAndBreakfast:login')
 
     risultati = None
     data_inizio_stagione = request.GET.get('stagione')  # PK di Stagione = dataInizio
@@ -754,7 +754,7 @@ def servizi_sotto_soglia(request):
 def gestione_camere(request):
     """Elenco di tutte le camere, con accesso alle azioni di modifica/disattivazione."""
     if not personale_autorizzato(request, 'amministratore'):
-        return redirect('login')
+        return redirect('BedAndBreakfast:login')
 
     camere = Camera.objects.all().order_by('piano', 'numerocamera')
     return render(request, 'admin/gestione_camere.html', {'camere': camere})
@@ -763,7 +763,7 @@ def gestione_camere(request):
 def gestione_personale(request):
     """Elenco di tutto il personale, con accesso alle azioni di modifica/disattivazione."""
     if not personale_autorizzato(request, 'amministratore'):
-        return redirect('login')
+        return redirect('BedAndBreakfast:login')
 
     personale = Personale.objects.all().order_by('cognome', 'nome')
     return render(request, 'admin/gestione_personale.html', {'personale': personale})
@@ -772,7 +772,7 @@ def gestione_personale(request):
 def gestione_servizi(request):
     """Elenco di tutti i servizi aggiuntivi, con accesso alle azioni di modifica/disattivazione."""
     if not personale_autorizzato(request, 'amministratore'):
-        return redirect('login')
+        return redirect('BedAndBreakfast:login')
 
     servizi = ServizioAggiuntivo.objects.all().order_by('nome')
     return render(request, 'admin/gestione_servizi.html', {'servizi': servizi})
@@ -781,7 +781,7 @@ def gestione_servizi(request):
 def gestione_stagioni(request):
     """Elenco delle stagioni definite (nessuna modifica/eliminazione prevista, Ambiguità 9)."""
     if not personale_autorizzato(request, 'amministratore'):
-        return redirect('login')
+        return redirect('BedAndBreakfast:login')
 
     stagioni = Stagione.objects.all().order_by('datainizio')
     return render(request, 'admin/gestione_stagioni.html', {'stagioni': stagioni})
@@ -800,13 +800,13 @@ def login_view(request):
         ospite = Ospite.objects.filter(e_mail=e_mail, password=password).first()
         if ospite:
             request.session['ospite_pk'] = ospite.documentoidentita
-            return redirect('le_mie_prenotazioni')
+            return redirect('BedAndBreakfast:le_mie_prenotazioni')
 
         persona = Personale.objects.filter(e_mail=e_mail, password=password, attivo=True).first()
         if persona:
             request.session['personale_pk'] = persona.documentoidentita
             request.session['ruolo_personale'] = persona.ruolo
-            return redirect('home')
+            return redirect('BedAndBreakfast:home')
 
         messages.error(request, "Credenziali non valide.")
 
@@ -815,4 +815,4 @@ def login_view(request):
 
 def logout_view(request):
     request.session.flush()
-    return redirect('home')
+    return redirect('BedAndBreakfast:home')

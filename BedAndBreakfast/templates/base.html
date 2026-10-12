@@ -10,6 +10,11 @@
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 
 <style>
+
+    main {
+        flex-grow: 1;
+    }
+
     :root {
         --pine: #2f3e35;
         --pine-dark: #202b25;
@@ -19,6 +24,9 @@
     }
 
     body {
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
         font-family: 'Work Sans', sans-serif;
         background-color: var(--sand);
         color: var(--ink);
@@ -77,6 +85,7 @@
     footer {
         background-color: var(--pine-dark);
         color: rgba(236, 230, 218, 0.7);
+        margin-top: auto;
     }
     </style>
 

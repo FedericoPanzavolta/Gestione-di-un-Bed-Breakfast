@@ -37,14 +37,14 @@
                     </td>
                     <td class="text-end">
                     {% if prenotazione.stato == 'attiva' and not prenotazione.datacheckineffettivo %}
-                        <form method="post" action="{% url 'cancella_prenotazione' codice_prenotazione=prenotazione.codiceprenotazione %}" class="d-inline">
+                        <form method="post" action="{% url 'BedAndBreakfast:cancella_prenotazione' codice_prenotazione=prenotazione.codiceprenotazione %}" class="d-inline">
                             {% csrf_token %}
                             <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Confermi la cancellazione?');">
                                 Cancella
                             </button>
                         </form>
                     {% elif prenotazione.stato == 'completata' %}
-                        <a class="btn btn-sm btn-clay" href="{% url 'lascia_recensione' codice_prenotazione=prenotazione.codiceprenotazione %}">
+                        <a class="btn btn-sm btn-clay" href="{% url 'BedAndBreakfast:lascia_recensione' codice_prenotazione=prenotazione.codiceprenotazione %}">
                             Lascia una recensione
                         </a>
                     {% endif %}
@@ -56,7 +56,7 @@
     </div>
 {% else %}
     <p class="text-muted">Non hai ancora effettuato nessuna prenotazione.</p>
-    <a href="{% url 'verifica_disponibilita' %}" class="btn btn-clay">Cerca una camera</a>
+    <a href="{% url 'BedAndBreakfast:verifica_disponibilita' %}" class="btn btn-clay">Cerca una camera</a>
 {% endif %}
 
 {% endblock %}
