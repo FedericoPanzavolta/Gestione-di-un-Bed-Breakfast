@@ -28,6 +28,9 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
+# Permette di utilizzare i messaggi di errore con bootstrap
+from django.contrib.messages import constants as messages
+MESSAGE_TAGS = {messages.ERROR: 'danger'}
 
 # Application definition
 
