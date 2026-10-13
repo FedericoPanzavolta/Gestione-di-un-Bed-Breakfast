@@ -31,6 +31,8 @@
                         <span class="badge text-bg-info">Attiva</span>
                     {% elif prenotazione.stato == 'completata' %}
                         <span class="badge text-bg-success">Completata</span>
+                    {% elif prenotazione.stato == 'no_show' %}
+                        <span class="badge text-bg-warning">Non presentato</span>
                     {% else %}
                         <span class="badge text-bg-secondary">Cancellata</span>
                     {% endif %}
