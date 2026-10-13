@@ -47,6 +47,13 @@ def personale_autorizzato(request, *ruoli_ammessi):
         return False
     return True
 
+def chiudi_prenotazioni_scadute():
+    """No-show: prenotazioni attive, senza check-in, con data di partenza già passata."""
+    Prenotazione.objects.filter(
+        stato='attiva',
+        datacheckineffettivo__isnull=True,
+        datapartenza__lt=timezone.now().date(),
+    ).update(stato='no_show')
 
 # ---------------------------------------------------------------------------
 # OSPITE — O1-O6
@@ -206,6 +213,8 @@ def le_mie_prenotazioni(request):
     if not ospite_loggato(request):
         return redirect('BedAndBreakfast:login')
 
+    chiudi_prenotazioni_scadute()
+
     prenotazioni = Prenotazione.objects.filter(
         documentoidentitaospite_id=request.session['ospite_pk'],
     ).order_by('-dataarrivo')
@@ -250,24 +259,34 @@ def lascia_recensione(request, codice_prenotazione):
 # ---------------------------------------------------------------------------
 # RECEPTIONIST — R1-R5
 # ---------------------------------------------------------------------------
-
 def check_in(request, codice_prenotazione):
     """R1 - Registra l'arrivo dell'ospite: la camera passa a 'occupata'."""
     if not personale_autorizzato(request, 'receptionist'):
-        return redirect('BedAndBreakfast:login')
-
+            return redirect('BedAndBreakfast:login')
+    
     prenotazione = get_object_or_404(Prenotazione, codiceprenotazione=codice_prenotazione, stato='attiva')
 
     if prenotazione.datacheckineffettivo is not None:
         messages.error(request, "Check-in già registrato per questa prenotazione.")
-        return redirect('BedAndBreakfast:arrivi_partenze')
+        return redirect('arrivi_partenze')
+
+    # dalla data di arrivo (inclusa) fino alla data di partenza (esclusa)
+    oggi = timezone.now().date()
+    if not (prenotazione.dataarrivo <= oggi < prenotazione.datapartenza):
+        messages.error(request, "Il check-in è possibile solo dalla data di arrivo e prima della data di partenza.")
+        return redirect('arrivi_partenze')
+
+    # la camera deve essere libera e pulita
+    camera = Camera.objects.get(piano=prenotazione.piano, numerocamera=prenotazione.numerocamera)
+    if camera.stato != 'disponibile':
+        messages.error(request, f"La camera non è disponibile (stato attuale: {camera.stato}).")
+        return redirect('arrivi_partenze')
 
     if request.method == 'POST':
         with transaction.atomic():
-            prenotazione.datacheckineffettivo = timezone.now().date()
+            prenotazione.datacheckineffettivo = oggi
             prenotazione.save()
 
-            camera = Camera.objects.get(piano=prenotazione.piano, numerocamera=prenotazione.numerocamera)
             camera.stato = 'occupata'
             camera.save()
 
@@ -284,10 +303,9 @@ def check_in(request, codice_prenotazione):
                     )
 
         messages.success(request, "Check-in registrato.")
-        return redirect('BedAndBreakfast:arrivi_partenze')
+        return redirect('arrivi_partenze')
 
     return render(request, 'receptionist/check_in.html', {'prenotazione': prenotazione})
-
 
 def check_out(request, codice_prenotazione):
     """R2/R3 - Registra la partenza, genera il pagamento, la camera passa a 'da pulire'."""
@@ -340,14 +358,21 @@ def arrivi_partenze(request):
     if not personale_autorizzato(request, 'receptionist'):
         return redirect('BedAndBreakfast:login')
 
-    data_selezionata = request.GET.get('data') or timezone.now().date().isoformat()
+    chiudi_prenotazioni_scadute()
+    oggi = timezone.now().date()
+    data_selezionata = request.GET.get('data') or oggi.isoformat()
 
     arrivi = Prenotazione.objects.filter(dataarrivo=data_selezionata, stato='attiva')
     partenze = Prenotazione.objects.filter(datapartenza=data_selezionata, stato='attiva')
+    in_ritardo = Prenotazione.objects.filter(
+        stato='attiva', datacheckineffettivo__isnull=True,
+        dataarrivo__lt=oggi, datapartenza__gt=oggi,
+    )
 
     return render(request, 'receptionist/arrivi_partenze.html', {
         'arrivi': arrivi,
         'partenze': partenze,
+        'in_ritardo': in_ritardo,
         'data': data_selezionata,
     })
 
@@ -428,9 +453,15 @@ def elimina_camera(request, piano, numero_camera):
     camera = get_object_or_404(Camera, piano=piano, numerocamera=numero_camera)
     camera.attivo = False
     camera.save()
-    messages.success(request, "Camera disattivata.")
-    return redirect('BedAndBreakfast:gestione_camere')
 
+    ancora_attive = Prenotazione.objects.filter(
+        piano=piano, numerocamera=numero_camera, stato='attiva',
+    ).count()
+    if ancora_attive:
+        messages.warning(request, f"Camera disattivata. Prenotazioni attive su questa camera: {ancora_attive}, verranno portate a termine.")
+    else:
+        messages.success(request, "Camera disattivata.")
+    return redirect('BedAndBreakfast:gestione_camere')
 
 def modifica_camera(request, piano, numero_camera):
     """A1.3 - Modifica i dettagli di una camera."""
@@ -602,6 +633,7 @@ def tasso_occupazione(request):
     if not personale_autorizzato(request, 'amministratore'):
         return redirect('BedAndBreakfast:login')
 
+    chiudi_prenotazioni_scadute()
     risultati = None
     data_inizio = request.GET.get('data_inizio')
     data_fine = request.GET.get('data_fine')
@@ -618,6 +650,11 @@ def tasso_occupazione(request):
                 stato__in=['attiva', 'completata'],
                 dataarrivo__lt=data_fine, datapartenza__gt=data_inizio,
             )
+
+            # una camera disattivata compare solo se ha avuto soggiorni nel periodo
+            if not camera.attivo and not prenotazioni:
+                continue
+
             notti_occupate = 0
             for p in prenotazioni:
                 inizio_sovrapposizione = max(p.dataarrivo, d_inizio)
@@ -665,6 +702,7 @@ def servizi_piu_richiesti(request):
     if not personale_autorizzato(request, 'amministratore'):
         return redirect('BedAndBreakfast:login')
 
+    chiudi_prenotazioni_scadute()
     risultati = None
     data_inizio = request.GET.get('data_inizio')
     data_fine = request.GET.get('data_fine')
@@ -675,10 +713,11 @@ def servizi_piu_richiesti(request):
             .filter(
                 codiceprenotazione__dataarrivo__gte=data_inizio,
                 codiceprenotazione__dataarrivo__lte=data_fine,
+                codiceprenotazione__stato__in=['attiva', 'completata'],
             )
             .values('nomeservizio')
             .annotate(richieste=Count('nomeservizio'))
-            .order_by('-richieste')[:3]
+            .order_by('-richieste', 'nomeservizio')[:3]
         )
 
     return render(request, 'admin/servizi_piu_richiesti.html', {'risultati': risultati})
@@ -725,6 +764,7 @@ def servizi_sotto_soglia(request):
     if not personale_autorizzato(request, 'amministratore'):
         return redirect('BedAndBreakfast:login')
 
+    chiudi_prenotazioni_scadute()
     risultati = None
     data_inizio_stagione = request.GET.get('stagione')  # PK di Stagione = dataInizio
     soglia = request.GET.get('soglia')
@@ -736,6 +776,7 @@ def servizi_sotto_soglia(request):
             totale = Include.objects.filter(
                 nomeservizio=servizio,
                 codiceprenotazione__datainiziostagione=data_inizio_stagione,
+                codiceprenotazione__stato='completata',
             ).aggregate(s=Sum('nomeservizio__costo'))['s'] or 0
 
             if totale < soglia:
