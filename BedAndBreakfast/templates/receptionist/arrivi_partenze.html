@@ -46,6 +46,30 @@
     <p class="text-muted">Nessun arrivo previsto per questa data.</p>
 {% endif %}
 
+{% if in_ritardo %}
+  <h3 class="h5 mb-3">Arrivi in ritardo</h3>
+  <div class="row g-3 mb-5">
+    {% for prenotazione in in_ritardo %}
+      <div class="col-md-6">
+        <div class="card p-3 h-100 d-flex flex-row justify-content-between align-items-center flex-wrap gap-2">
+          <div>
+            <strong>{{ prenotazione.camera.tipologia|capfirst }}</strong>
+            — piano {{ prenotazione.piano }}, n. {{ prenotazione.numerocamera }}
+            <span class="d-block text-muted small">
+              Ospite: {{ prenotazione.documentoidentitaospite.nome }} {{ prenotazione.documentoidentitaospite.cognome }}
+              &middot; atteso dal {{ prenotazione.dataarrivo }}
+            </span>
+          </div>
+          <a class="btn btn-sm btn-clay"
+             href="{% url 'BedAndBreakfast:check_in' codice_prenotazione=prenotazione.codiceprenotazione %}">
+            Vai al check-in
+          </a>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
+
 <h3 class="h5 mb-3">Partenze previste</h3>
 {% if partenze %}
     <div class="row g-3">
