@@ -286,19 +286,19 @@ def check_in(request, codice_prenotazione):
 
     if prenotazione.datacheckineffettivo is not None:
         messages.error(request, "Check-in già registrato per questa prenotazione.")
-        return redirect('arrivi_partenze')
+        return redirect('BedAndBreakfast:arrivi_partenze')
 
     # dalla data di arrivo (inclusa) fino alla data di partenza (esclusa)
     oggi = timezone.now().date()
     if not (prenotazione.dataarrivo <= oggi < prenotazione.datapartenza):
         messages.error(request, "Il check-in è possibile solo dalla data di arrivo e prima della data di partenza.")
-        return redirect('arrivi_partenze')
+        return redirect('BedAndBreakfast:arrivi_partenze')
 
     # la camera deve essere libera e pulita
     camera = Camera.objects.get(piano=prenotazione.piano, numerocamera=prenotazione.numerocamera)
     if camera.stato != 'disponibile':
         messages.error(request, f"La camera non è disponibile (stato attuale: {camera.stato}).")
-        return redirect('arrivi_partenze')
+        return redirect('BedAndBreakfast:arrivi_partenze')
 
     if request.method == 'POST':
         with transaction.atomic():
@@ -321,7 +321,7 @@ def check_in(request, codice_prenotazione):
                     )
 
         messages.success(request, "Check-in registrato.")
-        return redirect('arrivi_partenze')
+        return redirect('BedAndBreakfast:arrivi_partenze')
 
     return render(request, 'receptionist/check_in.html', {'prenotazione': prenotazione})
 
