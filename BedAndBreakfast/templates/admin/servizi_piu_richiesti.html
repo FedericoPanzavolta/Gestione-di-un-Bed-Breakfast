@@ -8,13 +8,26 @@
 
 <div class="card p-4 mb-5">
     <form method="get" class="row g-3 align-items-end">
-        <div class="col-md-4">
-            <label for="data_inizio" class="form-label">Dal</label>
-            <input type="date" class="form-control" id="data_inizio" name="data_inizio" value="{{ request.GET.data_inizio }}" required>
+        <div class="col-md-3">
+            <label for="anno" class="form-label">Anno</label>
+            <input type="number" class="form-control" id="anno" name="anno" value="{{ anno }}" required>
         </div>
-        <div class="col-md-4">
-            <label for="data_fine" class="form-label">Al</label>
-            <input type="date" class="form-control" id="data_fine" name="data_fine" value="{{ request.GET.data_fine }}" required>
+        <div class="col-md-3">
+            <label for="mese" class="form-label">Mese</label>
+            <select class="form-select" id="mese" name="mese" required>
+                <option value="1" {% if mese == 1 %}selected{% endif %}>Gennaio</option>
+                <option value="2" {% if mese == 2 %}selected{% endif %}>Febbraio</option>
+                <option value="3" {% if mese == 3 %}selected{% endif %}>Marzo</option>
+                <option value="4" {% if mese == 4 %}selected{% endif %}>Aprile</option>
+                <option value="5" {% if mese == 5 %}selected{% endif %}>Maggio</option>
+                <option value="6" {% if mese == 6 %}selected{% endif %}>Giugno</option>
+                <option value="7" {% if mese == 7 %}selected{% endif %}>Luglio</option>
+                <option value="8" {% if mese == 8 %}selected{% endif %}>Agosto</option>
+                <option value="9" {% if mese == 9 %}selected{% endif %}>Settembre</option>
+                <option value="10" {% if mese == 10 %}selected{% endif %}>Ottobre</option>
+                <option value="11" {% if mese == 11 %}selected{% endif %}>Novembre</option>
+                <option value="12" {% if mese == 12 %}selected{% endif %}>Dicembre</option>
+            </select>
         </div>
         <div class="col-md-3">
             <button type="submit" class="btn btn-clay w-100">Calcola</button>
@@ -22,19 +35,17 @@
     </form>
 </div>
 
-{% if risultati is not None %}
-    {% if risultati %}
-        <ol class="list-group list-group-numbered">
-        {% for riga in risultati %}
-            <li class="list-group-item d-flex justify-content-between align-items-center">
-                {{ riga.nomeservizio }}
-                <span class="badge text-bg-light border">{{ riga.richieste }} richieste</span>
-            </li>
-        {% endfor %}
-        </ol>
-    {% else %}
-        <p class="text-muted">Nessuna richiesta di servizi nel periodo indicato.</p>
-    {% endif %}
+{% if risultati %}
+    <ol class="list-group list-group-numbered">
+    {% for riga in risultati %}
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+            {{ riga.nomeservizio }}
+            <span class="badge text-bg-light border">{{ riga.richieste }} richieste</span>
+        </li>
+    {% endfor %}
+    </ol>
+{% else %}
+    <p class="text-muted">Nessuna richiesta di servizi nel mese selezionato.</p>
 {% endif %}
 
 {% endblock %}

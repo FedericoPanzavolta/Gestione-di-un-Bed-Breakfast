@@ -1,4 +1,5 @@
-from datetime import date
+import calendar
+from datetime import date, timedelta
 
 from django.contrib import messages
 from django.db import transaction
@@ -54,6 +55,23 @@ def chiudi_prenotazioni_scadute():
         datacheckineffettivo__isnull=True,
         datapartenza__lt=timezone.now().date(),
     ).update(stato='no_show')
+
+
+def mese_selezionato(request):
+    """Legge ?anno=...&mese=... dalla richiesta (default: il mese corrente).
+
+    Restituisce (primo giorno del mese, primo giorno del mese successivo):
+    l'intervallo è semiaperto [inizio, fine), come per le prenotazioni.
+    Se i parametri non sono validi si usa il mese corrente.
+    """
+    oggi = timezone.now().date()
+    try:
+        primo = date(int(request.GET.get('anno', oggi.year)),
+                     int(request.GET.get('mese', oggi.month)), 1)
+    except (TypeError, ValueError):
+        primo = oggi.replace(day=1)
+    giorni_del_mese = calendar.monthrange(primo.year, primo.month)[1]
+    return primo, primo + timedelta(days=giorni_del_mese)
 
 # ---------------------------------------------------------------------------
 # OSPITE — O1-O6
@@ -629,44 +647,44 @@ def aggiungi_stagione(request):
 
 
 def tasso_occupazione(request):
-    """A5 - Tasso di occupazione di ogni camera in un intervallo di date."""
+    """A5 - Tasso di occupazione di ogni camera in un mese."""
     if not personale_autorizzato(request, 'amministratore'):
         return redirect('BedAndBreakfast:login')
 
     chiudi_prenotazioni_scadute()
-    risultati = None
-    data_inizio = request.GET.get('data_inizio')
-    data_fine = request.GET.get('data_fine')
+    d_inizio, d_fine = mese_selezionato(request)  # d_fine = primo giorno del mese dopo (escluso)
+    notti_totali = (d_fine - d_inizio).days
 
-    if data_inizio and data_fine:
-        d_inizio = date.fromisoformat(data_inizio)
-        d_fine = date.fromisoformat(data_fine)
-        notti_totali = (d_fine - d_inizio).days or 1
+    risultati = []
+    # tutte le camere, non solo quelle attive: una camera disattivata compare
+    # solo se nel mese ha avuto soggiorni (si veda più sotto)
+    for camera in Camera.objects.all():
+        prenotazioni = list(Prenotazione.objects.filter(
+            piano=camera.piano, numerocamera=camera.numerocamera,
+            stato__in=['attiva', 'completata'],
+            dataarrivo__lt=d_fine, datapartenza__gt=d_inizio,
+        ))
 
-        risultati = []
-        for camera in Camera.objects.filter(attivo=True):
-            prenotazioni = Prenotazione.objects.filter(
-                piano=camera.piano, numerocamera=camera.numerocamera,
-                stato__in=['attiva', 'completata'],
-                dataarrivo__lt=data_fine, datapartenza__gt=data_inizio,
-            )
+        if not camera.attivo and not prenotazioni:
+            continue
 
-            # una camera disattivata compare solo se ha avuto soggiorni nel periodo
-            if not camera.attivo and not prenotazioni:
-                continue
+        # si contano solo le notti che cadono dentro il mese
+        notti_occupate = 0
+        for p in prenotazioni:
+            inizio_sovrapposizione = max(p.dataarrivo, d_inizio)
+            fine_sovrapposizione = min(p.datapartenza, d_fine)
+            notti_occupate += (fine_sovrapposizione - inizio_sovrapposizione).days
 
-            notti_occupate = 0
-            for p in prenotazioni:
-                inizio_sovrapposizione = max(p.dataarrivo, d_inizio)
-                fine_sovrapposizione = min(p.datapartenza, d_fine)
-                notti_occupate += (fine_sovrapposizione - inizio_sovrapposizione).days
+        risultati.append({
+            'camera': camera,
+            'tasso_percentuale': round(notti_occupate / notti_totali * 100, 1),
+        })
 
-            risultati.append({
-                'camera': camera,
-                'tasso_percentuale': round(notti_occupate / notti_totali * 100, 1),
-            })
-
-    return render(request, 'admin/tasso_occupazione.html', {'risultati': risultati})
+    return render(request, 'admin/tasso_occupazione.html', {
+        'risultati': risultati,
+        'anno': d_inizio.year,
+        'mese': d_inizio.month,
+    })
 
 
 def fatturato_mensile(request):
@@ -698,29 +716,33 @@ def fatturato_mensile(request):
 
 
 def servizi_piu_richiesti(request):
-    """A7 - I 3 servizi aggiuntivi più richiesti in un dato periodo."""
+    """A7 - I 3 servizi aggiuntivi più richiesti in un mese.
+
+    Un servizio appartiene al mese in cui ARRIVA l'ospite che lo ha richiesto.
+    """
     if not personale_autorizzato(request, 'amministratore'):
         return redirect('BedAndBreakfast:login')
 
     chiudi_prenotazioni_scadute()
-    risultati = None
-    data_inizio = request.GET.get('data_inizio')
-    data_fine = request.GET.get('data_fine')
+    d_inizio, d_fine = mese_selezionato(request)  # d_fine = primo giorno del mese dopo (escluso)
 
-    if data_inizio and data_fine:
-        risultati = (
-            Include.objects
-            .filter(
-                codiceprenotazione__dataarrivo__gte=data_inizio,
-                codiceprenotazione__dataarrivo__lte=data_fine,
-                codiceprenotazione__stato__in=['attiva', 'completata'],
-            )
-            .values('nomeservizio')
-            .annotate(richieste=Count('nomeservizio'))
-            .order_by('-richieste', 'nomeservizio')[:3]
+    risultati = (
+        Include.objects
+        .filter(
+            codiceprenotazione__dataarrivo__gte=d_inizio,
+            codiceprenotazione__dataarrivo__lt=d_fine,
+            codiceprenotazione__stato__in=['attiva', 'completata'],
         )
+        .values('nomeservizio')
+        .annotate(richieste=Count('nomeservizio'))
+        .order_by('-richieste', 'nomeservizio')[:3]
+    )
 
-    return render(request, 'admin/servizi_piu_richiesti.html', {'risultati': risultati})
+    return render(request, 'admin/servizi_piu_richiesti.html', {
+        'risultati': risultati,
+        'anno': d_inizio.year,
+        'mese': d_inizio.month,
+    })
 
 
 def recensioni_estreme(request):
