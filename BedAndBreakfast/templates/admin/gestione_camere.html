@@ -39,7 +39,7 @@
                     {% endif %}
                     </td>
                     <td class="text-end">
-                        <a class="btn btn-sm btn-outline-secondary" href="{% url 'BedAndBreakfast:BedAndBreakfast:modifica_camera' piano=camera.piano numero_camera=camera.numerocamera %}">
+                        <a class="btn btn-sm btn-outline-secondary" href="{% url 'BedAndBreakfast:modifica_camera' piano=camera.piano numero_camera=camera.numerocamera %}">
                             Modifica
                         </a>
                     {% if camera.attivo %}
