@@ -21,6 +21,7 @@
     {# personale loggato: rimando alla prima azione utile per il suo ruolo #}
     {% if request.session.ruolo_personale == 'receptionist' %}
         <a href="{% url 'BedAndBreakfast:arrivi_partenze' %}" class="btn btn-clay btn-lg">Arrivi e partenze di oggi</a>
+        <a href="{% url 'BedAndBreakfast:lista_camere_da_pulire' %}" class="btn btn-clay btn-lg">Camere da pulire</a>
     {% elif request.session.ruolo_personale == 'addetto_pulizie' %}
         <a href="{% url 'BedAndBreakfast:lista_camere_da_pulire' %}" class="btn btn-clay btn-lg">Camere da pulire</a>
     {% elif request.session.ruolo_personale == 'amministratore' %}
