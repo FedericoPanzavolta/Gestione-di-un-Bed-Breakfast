@@ -122,7 +122,7 @@
 
             {% if request.session.ruolo_personale == 'receptionist' %}
             <li class="nav-item">
-                <a class="nav-link" href="{% url 'BedAndBreakfast:arrivi_partenze' %}">Arrivi &amp; partenze</a>
+                <a class="nav-link" href="{% url 'BedAndBreakfast:arrivi_partenze' %}">Arrivi/partenze</a>
             </li>
             <li class="nav-item">
                 <a class="nav-link" href="{% url 'BedAndBreakfast:lista_camere_da_pulire' %}">Camere da pulire</a>
@@ -143,6 +143,8 @@
                     <li><a class="dropdown-item" href="{% url 'BedAndBreakfast:gestione_personale' %}">Personale</a></li>
                     <li><a class="dropdown-item" href="{% url 'BedAndBreakfast:gestione_servizi' %}">Servizi aggiuntivi</a></li>
                     <li><a class="dropdown-item" href="{% url 'BedAndBreakfast:gestione_stagioni' %}">Stagioni</a></li>
+                    <li><a class="dropdown-item" href="{% url 'BedAndBreakfast:arrivi_partenze' %}">Arrivi/partenze</a></li>
+                    <li><a class="dropdown-item" href="{% url 'BedAndBreakfast:lista_camere_da_pulire' %}">Camere da pulire</a></li>
                 </ul>
             </li>
             <li class="nav-item dropdown">
