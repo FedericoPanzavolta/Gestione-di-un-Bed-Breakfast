@@ -38,15 +38,23 @@ def ospite_loggato(request):
 
 
 def personale_autorizzato(request, *ruoli_ammessi):
-    """True se il personale collegato ha uno dei ruoli ammessi.
-    Se ruoli_ammessi è vuoto, è sufficiente essere un membro del personale
-    loggato, di qualunque ruolo: personale_autorizzato(request).
-    """
-    ruolo = request.session.get('ruolo_personale')
-    if not ruolo or (ruoli_ammessi and ruolo not in ruoli_ammessi):
+    """True se il personale collegato ha uno dei ruoli ammessi."""
+    pk = request.session.get('personale_pk')
+    persona = Personale.objects.filter(pk=pk, attivo=True).first() if pk else None
+    if persona is None:
+        request.session.pop('personale_pk', None)
+        request.session.pop('ruolo_personale', None)
+        messages.error(request, "Accesso non autorizzato.")
+        return False
+    request.session['ruolo_personale'] = persona.ruolo   # aggiorna anche il menù
+    if ruoli_ammessi and persona.ruolo not in ruoli_ammessi:
         messages.error(request, "Accesso non autorizzato.")
         return False
     return True
+
+#---------------------------------------------------------------------------
+# Funzioni di utility
+#---------------------------------------------------------------------------
 
 def chiudi_prenotazioni_scadute():
     """No-show: prenotazioni attive, senza check-in, con data di partenza già passata."""
@@ -72,6 +80,52 @@ def mese_selezionato(request):
         primo = oggi.replace(day=1)
     giorni_del_mese = calendar.monthrange(primo.year, primo.month)[1]
     return primo, primo + timedelta(days=giorni_del_mese)
+
+def parse_data(valore):
+    """Da 'YYYY-MM-DD' a date, oppure None se non valida."""
+    try:
+        return date.fromisoformat(valore)
+    except (TypeError, ValueError):
+        return None
+
+def periodo_valido(request, arrivo, partenza):
+    if arrivo is None or partenza is None:
+        messages.error(request, "Date non valide.")
+        return False
+    if arrivo < timezone.now().date():
+        messages.error(request, "La data di arrivo non può essere nel passato.")
+        return False
+    if partenza <= arrivo:
+        messages.error(request, "La data di partenza deve essere successiva a quella di arrivo.")
+        return False
+    return True
+
+def riepilogo_pagamento(prenotazione):
+    """Calcola il dettaglio dell'importo di una prenotazione (usato da check_out)."""
+    camera = Camera.objects.get(piano=prenotazione.piano, numerocamera=prenotazione.numerocamera)
+    notti = (prenotazione.datapartenza - prenotazione.dataarrivo).days
+
+    # Ambiguità 1: il moltiplicatore stagionale si applica solo al prezzo
+    # base della camera, non ai servizi aggiuntivi.
+    stagione = prenotazione.datainiziostagione
+    moltiplicatore = stagione.moltiplicatore if stagione else 1
+
+    servizi = list(
+        Include.objects.filter(codiceprenotazione=prenotazione).select_related('nomeservizio')
+    )
+    totale_servizi = sum(i.nomeservizio.costo for i in servizi)
+    totale_camera = camera.prezzobasenotte * moltiplicatore * notti
+
+    return {
+        'camera': camera,
+        'notti': notti,
+        'stagione': stagione,
+        'moltiplicatore': moltiplicatore,
+        'servizi': servizi,
+        'totale_camera': round(totale_camera, 2),
+        'totale_servizi': totale_servizi,
+        'importo_totale': round(totale_camera + totale_servizi, 2),
+    }
 
 # ---------------------------------------------------------------------------
 # OSPITE — O1-O6
@@ -117,26 +171,31 @@ def verifica_disponibilita(request):
     camere_disponibili = None
 
     if request.GET.get('data_arrivo') and request.GET.get('data_partenza'):
-        data_arrivo = request.GET['data_arrivo']
-        data_partenza = request.GET['data_partenza']
-        numero_ospiti = int(request.GET.get('numero_ospiti', 1))
+        data_arrivo = parse_data(request.GET['data_arrivo'])
+        data_partenza = parse_data(request.GET['data_partenza'])
+        try:
+            numero_ospiti = max(1, int(request.GET.get('numero_ospiti', 1)))
+        except ValueError:
+            numero_ospiti = 1
 
-        candidate = Camera.objects.filter(numeromassimoospiti__gte=numero_ospiti, attivo=True)
+        if periodo_valido(request, data_arrivo, data_partenza):
 
-        # Ambiguità 6: una camera è occupata per il periodo se esiste una
-        # prenotazione ATTIVA le cui date si sovrappongono a quelle richieste.
-        # Le prenotazioni completate riguardano soggiorni passati, quelle
-        # cancellate non vincolano la camera: entrambe vengono ignorate qui.
-        prenotazioni_sovrapposte = Prenotazione.objects.filter(
-            stato='attiva',
-            dataarrivo__lt=data_partenza,
-            datapartenza__gt=data_arrivo,
-        ).values_list('piano', 'numerocamera')
-        camere_occupate = set(prenotazioni_sovrapposte)
+            candidate = Camera.objects.filter(numeromassimoospiti__gte=numero_ospiti, attivo=True)
 
-        camere_disponibili = [
-            c for c in candidate if (c.piano, c.numerocamera) not in camere_occupate
-        ]
+            # Ambiguità 6: una camera è occupata per il periodo se esiste una
+            # prenotazione ATTIVA le cui date si sovrappongono a quelle richieste.
+            # Le prenotazioni completate riguardano soggiorni passati, quelle
+            # cancellate non vincolano la camera: entrambe vengono ignorate qui.
+            prenotazioni_sovrapposte = Prenotazione.objects.filter(
+                stato='attiva',
+                dataarrivo__lt=data_partenza,
+                datapartenza__gt=data_arrivo,
+            ).values_list('piano', 'numerocamera')
+            camere_occupate = set(prenotazioni_sovrapposte)
+
+            camere_disponibili = [
+                c for c in candidate if (c.piano, c.numerocamera) not in camere_occupate
+            ]
 
     return render(request, 'ospiti/verifica_disponibilita.html', {
         'camere': camere_disponibili,
@@ -151,32 +210,46 @@ def effettua_prenotazione(request, piano, numero_camera):
     camera = get_object_or_404(Camera, piano=piano, numerocamera=numero_camera, attivo=True)
 
     if request.method == 'POST':
-        data_arrivo = request.POST.get('data_arrivo')
-        data_partenza = request.POST.get('data_partenza')
-        numero_ospiti = int(request.POST.get('numero_ospiti'))
-        nomi_servizi = request.POST.getlist('servizi')  # nomi dei ServizioAggiuntivo selezionati
+        data_arrivo = parse_data(request.POST.get('data_arrivo'))
+        data_partenza = parse_data(request.POST.get('data_partenza'))
+        try:
+            numero_ospiti = int(request.POST.get('numero_ospiti'))
+        except (TypeError, ValueError):
+            numero_ospiti = 0
+        nomi_servizi = request.POST.getlist('servizi')
+
+        if not periodo_valido(request, data_arrivo, data_partenza) or numero_ospiti < 1:
+            if numero_ospiti < 1:
+                messages.error(request, "Numero di ospiti non valido.")
+            return redirect('BedAndBreakfast:effettua_prenotazione', piano=piano, numero_camera=numero_camera)
 
         # Ambiguità 8: capienza della camera
         if numero_ospiti > camera.numeromassimoospiti:
             messages.error(request, "Il numero di ospiti supera la capienza della camera.")
             return redirect('BedAndBreakfast:effettua_prenotazione', piano=piano, numero_camera=numero_camera)
 
-        # Ambiguità 6: nessuna sovrapposizione con prenotazioni attive
-        sovrapposta = Prenotazione.objects.filter(
-            piano=piano, numerocamera=numero_camera, stato='attiva',
-            dataarrivo__lt=data_partenza, datapartenza__gt=data_arrivo,
-        ).exists()
-        if sovrapposta:
-            messages.error(request, "La camera non è più disponibile per queste date.")
-            return redirect('BedAndBreakfast:verifica_disponibilita')
-
-        # Ambiguità 2/9: la stagione applicabile è quella in cui ricade
-        # la data di arrivo (se nessuna la copre, si applica il prezzo base).
-        stagione = Stagione.objects.filter(
-            datainizio__lte=data_arrivo, datafine__gte=data_arrivo,
-        ).first()
-
         with transaction.atomic():
+            # Blocco della camera, le richieste concorrenti vengono messe in coda fino al completamento dell'operazione
+            get_object_or_404(
+                Camera.objects.select_for_update(),
+                piano=piano, numerocamera=numero_camera, attivo=True,
+            )
+
+            # Ambiguità 6: nessuna sovrapposizione con prenotazioni attive
+            sovrapposta = Prenotazione.objects.filter(
+                piano=piano, numerocamera=numero_camera, stato='attiva',
+                dataarrivo__lt=data_partenza, datapartenza__gt=data_arrivo,
+            ).exists()
+            if sovrapposta:
+                messages.error(request, "La camera non è più disponibile per queste date.")
+                return redirect('BedAndBreakfast:verifica_disponibilita')
+
+            # Ambiguità 2/9: la stagione applicabile è quella in cui ricade
+            # la data di arrivo (se nessuna la copre, si applica il prezzo base).
+            stagione = Stagione.objects.filter(
+                datainizio__lte=data_arrivo, datafine__gte=data_arrivo,
+            ).first()
+
             prenotazione = Prenotazione.objects.create(
                 dataarrivo=data_arrivo,
                 datapartenza=data_partenza,
@@ -259,7 +332,14 @@ def lascia_recensione(request, codice_prenotazione):
         return redirect('BedAndBreakfast:le_mie_prenotazioni')
 
     if request.method == 'POST':
-        voto = int(request.POST.get('voto'))
+        try:
+            voto = int(request.POST.get('voto'))
+        except (TypeError, ValueError):
+            voto = 0
+        if not 1 <= voto <= 5:
+            messages.error(request, "Il voto deve essere compreso tra 1 e 5.")
+            return render(request, 'ospiti/lascia_recensione.html', {'prenotazione': prenotazione})
+        
         commento = request.POST.get('commento') or None  # facoltativo
 
         Recensione.objects.create(
@@ -279,7 +359,7 @@ def lascia_recensione(request, codice_prenotazione):
 # ---------------------------------------------------------------------------
 def check_in(request, codice_prenotazione):
     """R1 - Registra l'arrivo dell'ospite: la camera passa a 'occupata'."""
-    if not personale_autorizzato(request, 'receptionist'):
+    if not personale_autorizzato(request, 'receptionist', 'amministratore'):
             return redirect('BedAndBreakfast:login')
     
     prenotazione = get_object_or_404(Prenotazione, codiceprenotazione=codice_prenotazione, stato='attiva')
@@ -301,6 +381,27 @@ def check_in(request, codice_prenotazione):
         return redirect('BedAndBreakfast:arrivi_partenze')
 
     if request.method == 'POST':
+        occupanti = []
+        for nome, cognome, documento in zip(
+            request.POST.getlist('occupante_nome'),
+            request.POST.getlist('occupante_cognome'),
+            request.POST.getlist('occupante_documento'),
+        ):
+            documento = documento.strip()
+            if documento:
+                occupanti.append((nome.strip(), cognome.strip(), documento))
+
+        documenti = [d for _, _, d in occupanti]
+        if len(set(documenti)) != len(documenti) \
+                or prenotazione.documentoidentitaospite_id in documenti \
+                or any(len(d) > 9 or not n or not c for n, c, d in occupanti):
+            messages.error(request, "Dati degli occupanti non validi (documenti duplicati, troppo lunghi o dati mancanti).")
+            return render(request, 'receptionist/check_in.html', {'prenotazione': prenotazione})
+
+        if len(occupanti) + 1 > prenotazione.numeroospiti:
+            messages.error(request, f"Troppi occupanti: la prenotazione è per {prenotazione.numeroospiti} ospiti, titolare compreso.")
+            return render(request, 'receptionist/check_in.html', {'prenotazione': prenotazione})
+
         with transaction.atomic():
             prenotazione.datacheckineffettivo = oggi
             prenotazione.save()
@@ -308,17 +409,13 @@ def check_in(request, codice_prenotazione):
             camera.stato = 'occupata'
             camera.save()
 
-            for nome, cognome, documento in zip(
-                request.POST.getlist('occupante_nome'),
-                request.POST.getlist('occupante_cognome'),
-                request.POST.getlist('occupante_documento'),
-            ):
-                if documento:
-                    Occupante.objects.get_or_create(
-                        codiceprenotazione=prenotazione,
-                        documentoidentita=documento,
-                        defaults={'nome': nome, 'cognome': cognome},
-                    )
+            for nome, cognome, documento in occupanti:
+                Occupante.objects.create(
+                    codiceprenotazione=prenotazione,
+                    documentoidentita=documento,
+                    nome=nome,
+                    cognome=cognome,
+                )
 
         messages.success(request, "Check-in registrato.")
         return redirect('BedAndBreakfast:arrivi_partenze')
@@ -327,7 +424,7 @@ def check_in(request, codice_prenotazione):
 
 def check_out(request, codice_prenotazione):
     """R2/R3 - Registra la partenza, genera il pagamento, la camera passa a 'da pulire'."""
-    if not personale_autorizzato(request, 'receptionist'):
+    if not personale_autorizzato(request, 'receptionist', 'amministratore'):
         return redirect('BedAndBreakfast:login')
 
     prenotazione = get_object_or_404(Prenotazione, codiceprenotazione=codice_prenotazione, stato='attiva')
@@ -336,21 +433,17 @@ def check_out(request, codice_prenotazione):
         messages.error(request, "Impossibile effettuare il check-out: check-in non ancora registrato.")
         return redirect('BedAndBreakfast:arrivi_partenze')
 
+    riepilogo = riepilogo_pagamento(prenotazione)
+
     if request.method == 'POST':
         metodo = request.POST.get('metodo')  # 'contanti' | 'carta' | 'bonifico'
+        if metodo not in ('contanti', 'carta', 'bonifico'):
+            messages.error(request, "Metodo di pagamento non valido.")
+            return render(request, 'receptionist/check_out.html',
+                          {'prenotazione': prenotazione, 'riepilogo': riepilogo})
 
-        notti = (prenotazione.datapartenza - prenotazione.dataarrivo).days
-        camera = Camera.objects.get(piano=prenotazione.piano, numerocamera=prenotazione.numerocamera)
-
-        # Ambiguità 1: il moltiplicatore stagionale si applica solo al prezzo
-        # base della camera, non ai servizi aggiuntivi.
-        moltiplicatore = prenotazione.datainiziostagione.moltiplicatore if prenotazione.datainiziostagione_id else 1
-
-        totale_servizi = Include.objects.filter(codiceprenotazione=prenotazione).aggregate(
-            s=Sum('nomeservizio__costo'),
-        )['s'] or 0
-
-        importo_totale = camera.prezzobasenotte * moltiplicatore * notti + totale_servizi
+        camera = riepilogo['camera']
+        importo_totale = riepilogo['importo_totale']
 
         with transaction.atomic():
             Pagamento.objects.create(
@@ -373,7 +466,7 @@ def check_out(request, codice_prenotazione):
 
 def arrivi_partenze(request):
     """R4 - Mostra gli arrivi e le partenze previsti per una data (default: oggi)."""
-    if not personale_autorizzato(request, 'receptionist'):
+    if not personale_autorizzato(request, 'receptionist', 'amministratore'):
         return redirect('BedAndBreakfast:login')
 
     chiudi_prenotazioni_scadute()
@@ -399,7 +492,7 @@ def arrivi_partenze(request):
 # entrambi i ruoli possono consultare la lista delle camere da pulire.
 def lista_camere_da_pulire(request):
     """R5 / P1 - Elenca le camere nello stato 'da pulire'."""
-    if not personale_autorizzato(request, 'receptionist', 'addetto_pulizie'):
+    if not personale_autorizzato(request, 'receptionist', 'addetto_pulizie', 'amministratore'):
         return redirect('BedAndBreakfast:login')
 
     camere = Camera.objects.filter(stato='da pulire')
@@ -469,17 +562,17 @@ def elimina_camera(request, piano, numero_camera):
         return redirect('BedAndBreakfast:gestione_camere')
 
     camera = get_object_or_404(Camera, piano=piano, numerocamera=numero_camera)
+    ancora_attive = Prenotazione.objects.filter(
+            piano=piano, numerocamera=numero_camera, stato='attiva',).count()
+    if ancora_attive:
+        messages.error(request, f"Impossibile disattivare: ci sono {ancora_attive} prenotazioni attive su questa camera.")
+        return redirect('BedAndBreakfast:gestione_camere')
+
     camera.attivo = False
     camera.save()
+    messages.success(request, "Camera disattivata.")
 
-    ancora_attive = Prenotazione.objects.filter(
-        piano=piano, numerocamera=numero_camera, stato='attiva',
-    ).count()
-    if ancora_attive:
-        messages.warning(request, f"Camera disattivata. Prenotazioni attive su questa camera: {ancora_attive}, verranno portate a termine.")
-    else:
-        messages.success(request, "Camera disattivata.")
-    return redirect('BedAndBreakfast:gestione_camere')
+    
 
 def modifica_camera(request, piano, numero_camera):
     """A1.3 - Modifica i dettagli di una camera."""
@@ -508,6 +601,11 @@ def aggiungi_personale(request):
     if request.method == 'POST':
         e_mail = request.POST.get('e_mail')
         documento_identita = request.POST.get('documento_identita')
+
+        ruolo = request.POST.get('ruolo')
+        if ruolo not in ('amministratore', 'receptionist', 'addetto_pulizie'):
+            messages.error(request, "Ruolo non valido.")
+            return render(request, 'admin/aggiungi_personale.html')
 
         # stesso controllo incrociato di unicità e-mail usato in O1
         if Ospite.objects.filter(e_mail=e_mail).exists() or Personale.objects.filter(e_mail=e_mail).exists():
@@ -557,6 +655,11 @@ def modifica_personale(request, documento_identita):
     persona = get_object_or_404(Personale, documentoidentita=documento_identita)
 
     if request.method == 'POST':
+        ruolo = request.POST.get('ruolo')
+        if ruolo not in ('amministratore', 'receptionist', 'addetto_pulizie'):
+            messages.error(request, "Ruolo non valido.")
+            return render(request, 'admin/modifica_personale.html', {'persona': persona})
+        
         persona.telefono = request.POST.get('telefono')
         persona.ruolo = request.POST.get('ruolo')
         persona.save()
@@ -623,8 +726,12 @@ def aggiungi_stagione(request):
         return redirect('BedAndBreakfast:login')
 
     if request.method == 'POST':
-        data_inizio = request.POST.get('data_inizio')
-        data_fine = request.POST.get('data_fine')
+        data_inizio = parse_data(request.POST.get('data_inizio'))
+        data_fine = parse_data(request.POST.get('data_fine'))
+
+        if data_inizio is None or data_fine is None or data_fine < data_inizio:
+            messages.error(request, "Il periodo indicato non è valido.")
+            return render(request, 'admin/aggiungi_stagione.html')
 
         # Ambiguità 2: le stagioni non possono sovrapporsi
         sovrapposta = Stagione.objects.filter(
@@ -766,12 +873,16 @@ def recensioni_estreme(request):
         chiave = (riga['codiceprenotazione__piano'], riga['codiceprenotazione__numerocamera'])
         per_tipologia.setdefault(tipologia_per_camera[chiave], []).append(riga)
 
+    def ordine(riga): 
+        return (riga['codiceprenotazione__piano'], riga['codiceprenotazione__numerocamera'])
+
     estremi_per_tipologia = {
         tipologia: {
-            'migliore': max(righe, key=lambda r: r['media_voto']),
-            'peggiore': min(righe, key=lambda r: r['media_voto']),
+            # a parita' di media vince la camera con piano e numero piu' bassi
+            'migliore': min(righe, key=lambda r: (-r['media_voto'], *ordine(r))),
+            'peggiore': min(righe, key=lambda r: (r['media_voto'], *ordine(r))),
         }
-        for tipologia, righe in per_tipologia.items()
+        for tipologia, righe in sorted(per_tipologia.items())
     }
 
     return render(request, 'admin/recensioni_estreme.html', {'estremi': estremi_per_tipologia})
@@ -858,7 +969,7 @@ def login_view(request):
     """Login unico per ospiti e personale: prova prima su Ospite, poi su Personale."""
     if request.method == 'POST':
         e_mail = request.POST.get('e_mail')
-        password = request.POST.get('password')  # confronto in chiaro, vedi nota in cima al file
+        password = request.POST.get('password')
 
         ospite = Ospite.objects.filter(e_mail=e_mail, password=password).first()
         if ospite:
