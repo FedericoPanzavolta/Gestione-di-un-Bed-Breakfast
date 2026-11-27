@@ -38,10 +38,28 @@
                     </div>
                 </fieldset>
             
-                <p class="small text-muted">
-                    Il totale viene calcolato automaticamente (prezzo camera &times; stagione &times; notti + servizi
-                    aggiuntivi) e mostrato a conferma avvenuta.
-                </p>
+                <h3 class="h6">Riepilogo</h3>
+                <table class="table table-sm mb-4">
+                    <tr>
+                        <td>
+                            Camera: {{ riepilogo.notti }} notti &times; {{ riepilogo.camera.prezzobasenotte }} &euro;
+                            {% if riepilogo.stagione %}
+                                &times; {{ riepilogo.moltiplicatore }} ({{ riepilogo.stagione.nome }})
+                            {% endif %}
+                        </td>
+                        <td class="text-end">{{ riepilogo.totale_camera }} &euro;</td>
+                    </tr>
+                    {% for inc in riepilogo.servizi %}
+                    <tr>
+                        <td>{{ inc.nomeservizio.nome }}</td>
+                        <td class="text-end">{{ inc.nomeservizio.costo }} &euro;</td>
+                    </tr>
+                    {% endfor %}
+                    <tr class="fw-bold">
+                        <td>Totale</td>
+                        <td class="text-end">{{ riepilogo.importo_totale }} &euro;</td>
+                    </tr>
+                </table>
             
                 <button type="submit" class="btn btn-clay w-100">Conferma check-out</button>
             </form>
