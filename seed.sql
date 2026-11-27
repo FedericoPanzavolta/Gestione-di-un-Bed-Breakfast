@@ -34,7 +34,7 @@ CONSTRAINT ID_CAMERA_ID PRIMARY KEY (piano, numeroCamera)
 );
     
 CREATE TABLE INCLUDE (
-    nomeServizio VARCHAR(20) NOT NULL,
+    nomeServizio VARCHAR(40) NOT NULL,
     codicePrenotazione INT NOT NULL,
     CONSTRAINT ID_INCLUDE_ID PRIMARY KEY (codicePrenotazione, nomeServizio)
 );
@@ -110,11 +110,12 @@ CREATE TABLE RECENSIONE (
     commento VARCHAR(300),
     data DATE NOT NULL,
     CONSTRAINT ID_RECENSIONE_ID PRIMARY KEY (codiceRecensione),
-    CONSTRAINT SID_RECEN_PRENO_ID UNIQUE (codicePrenotazione)
+    CONSTRAINT SID_RECEN_PRENO_ID UNIQUE (codicePrenotazione),
+    CONSTRAINT chk_voto CHECK (voto BETWEEN 1 AND 5)
 );
     
 CREATE TABLE SERVIZIO_AGGIUNTIVO (
-    nome VARCHAR(20) NOT NULL,
+    nome VARCHAR(40) NOT NULL,
     descrizione VARCHAR(200) NOT NULL,
     costo NUMERIC(5,2) NOT NULL,
     attivo BOOLEAN NOT NULL,
@@ -122,7 +123,7 @@ CREATE TABLE SERVIZIO_AGGIUNTIVO (
 );
     
 CREATE TABLE STAGIONE (
-    nome VARCHAR(20) NOT NULL,
+    nome VARCHAR(40) NOT NULL,
     moltiplicatore NUMERIC(3,2) NOT NULL,
     dataInizio DATE NOT NULL,
     dataFine DATE NOT NULL,
