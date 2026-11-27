@@ -135,10 +135,11 @@ class Recensione(models.Model):
 
     class Meta:
         db_table = 'RECENSIONE'
+        constraints = [models.CheckConstraint(condition=models.Q(voto__gte=1, voto__lte=5), name='chk_voto')]
 
 
 class ServizioAggiuntivo(models.Model):
-    nome = models.CharField(primary_key=True, max_length=20)
+    nome = models.CharField(primary_key=True, max_length=40)
     descrizione = models.CharField(max_length=200)
     costo = models.DecimalField(max_digits=5, decimal_places=2)
     attivo = models.BooleanField()
